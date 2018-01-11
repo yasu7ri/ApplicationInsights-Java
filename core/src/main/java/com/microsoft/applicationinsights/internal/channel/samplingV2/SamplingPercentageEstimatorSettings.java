@@ -1,6 +1,6 @@
 package com.microsoft.applicationinsights.internal.channel.samplingV2;
 
-import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 public class SamplingPercentageEstimatorSettings {
 
@@ -8,9 +8,9 @@ public class SamplingPercentageEstimatorSettings {
     public double initialSamplingPercentage;
     public double minSamplingPercentage;
     public double maxSamplingPercentage;
-    public Duration evaluationInterval;
-    public Duration samplingPercentageDecreaseTimeOut;
-    public Duration samplingPercentageIncreaseTimeout;
+    public long evaluationInterval;
+    public long samplingPercentageDecreaseTimeOut;
+    public long samplingPercentageIncreaseTimeout;
     public double movingAverageRatio;
 
 
@@ -21,9 +21,9 @@ public class SamplingPercentageEstimatorSettings {
         this.initialSamplingPercentage = 100.0;
         this.minSamplingPercentage = 0.1;
         this.maxSamplingPercentage = 100.0;
-        this.evaluationInterval = Duration.ofSeconds(15);
-        this.samplingPercentageDecreaseTimeOut = Duration.ofMinutes(2);
-        this.samplingPercentageIncreaseTimeout = Duration.ofMinutes(15);
+        this.evaluationInterval = TimeUnit.SECONDS.toSeconds(15);
+        this.samplingPercentageDecreaseTimeOut = TimeUnit.MINUTES.toMinutes(2);
+        this.samplingPercentageIncreaseTimeout = TimeUnit.MINUTES.toMinutes(15);
         this.movingAverageRatio = 0.25;
     }
 
@@ -59,27 +59,27 @@ public class SamplingPercentageEstimatorSettings {
         this.maxSamplingPercentage = maxSamplingPercentage;
     }
 
-    public Duration getEvaluationInterval() {
+    public long getEvaluationInterval() {
         return evaluationInterval;
     }
 
-    public void setEvaluationInterval(Duration evaluationInterval) {
+    public void setEvaluationInterval(long evaluationInterval) {
         this.evaluationInterval = evaluationInterval;
     }
 
-    public Duration getSamplingPercentageDecreaseTimeOut() {
+    public long getSamplingPercentageDecreaseTimeOut() {
         return samplingPercentageDecreaseTimeOut;
     }
 
-    public void setSamplingPercentageDecreaseTimeOut(Duration samplingPercentageDecreaseTimeOut) {
+    public void setSamplingPercentageDecreaseTimeOut(long samplingPercentageDecreaseTimeOut) {
         this.samplingPercentageDecreaseTimeOut = samplingPercentageDecreaseTimeOut;
     }
 
-    public Duration getSamplingPercentageIncreaseTimeout() {
+    public long getSamplingPercentageIncreaseTimeout() {
         return samplingPercentageIncreaseTimeout;
     }
 
-    public void setSamplingPercentageIncreaseTimeout(Duration samplingPercentageIncreaseTimeout) {
+    public void setSamplingPercentageIncreaseTimeout(long samplingPercentageIncreaseTimeout) {
         this.samplingPercentageIncreaseTimeout = samplingPercentageIncreaseTimeout;
     }
 
@@ -94,6 +94,7 @@ public class SamplingPercentageEstimatorSettings {
     /**
      * Gets effective telemetry items per rate per second
      * adjusted in case user makes error while setting the value
+     *
      * @return
      */
     double getEffectiveTelemetryItemsPerSecond() {
@@ -103,6 +104,7 @@ public class SamplingPercentageEstimatorSettings {
     /**
      * Gets effective initial sampling rate
      * adjusted in case user makes error while setting the value
+     *
      * @return
      */
     int getEffectiveInitialSamplingRate() {
@@ -112,6 +114,7 @@ public class SamplingPercentageEstimatorSettings {
     /**
      * Gets effective minimum sampling rate
      * adjusted in case user makes error while setting the value
+     *
      * @return
      */
     int getEffectiveMinSamplingRate() {
@@ -121,6 +124,7 @@ public class SamplingPercentageEstimatorSettings {
     /**
      * Gets effective maximum sampling rate
      * adjusted in case user makes error while setting the value
+     *
      * @return
      */
     int getEffectiveMaxSamplingRate() {
@@ -130,35 +134,39 @@ public class SamplingPercentageEstimatorSettings {
     /**
      * Gets effective Sampling percentage evaluation interval
      * adjusted in case user makes error while setting the value
+     *
      * @return
      */
-    Duration getEffectiveEvaluationInterval() {
-        return this.evaluationInterval.equals(Duration.ZERO) ? Duration.ofSeconds(15) : this.evaluationInterval;
+    long getEffectiveEvaluationInterval() {
+        return this.evaluationInterval == TimeUnit.SECONDS.toSeconds(0) ? TimeUnit.SECONDS.toSeconds(0) : this.evaluationInterval;
     }
 
     /**
      * Gets effective sampling percentage decrease timeout
      * adjusted in case user makes error while setting the value
+     *
      * @return
      */
-    Duration getEffectiveSamplingPercentageDecreaseTimeout() {
-        return this.samplingPercentageDecreaseTimeOut.equals(Duration.ZERO) ? Duration.ofMinutes(2)
+    long getEffectiveSamplingPercentageDecreaseTimeout() {
+        return this.samplingPercentageDecreaseTimeOut == TimeUnit.SECONDS.toSeconds(0) ? TimeUnit.MINUTES.toMinutes(2)
                 : this.samplingPercentageDecreaseTimeOut;
     }
 
     /**
      * Gets effective sampling percentage increase timeout
      * adjusted in case user makes error while setting the value
+     *
      * @return
      */
-    Duration getEffectiveSamplingPercentageIncreaseTimeout() {
-        return this.samplingPercentageIncreaseTimeout.equals(Duration.ZERO) ? Duration.ofMinutes(15)
-                :this.samplingPercentageIncreaseTimeout;
+    long getEffectiveSamplingPercentageIncreaseTimeout() {
+        return this.samplingPercentageIncreaseTimeout == TimeUnit.SECONDS.toSeconds(0) ? TimeUnit.MINUTES.toMinutes(15)
+                : this.samplingPercentageIncreaseTimeout;
     }
 
     /**
-     * Gets effective exponential moving average ratio 
+     * Gets effective exponential moving average ratio
      * adjusted in case user makes error while setting the value
+     *
      * @return
      */
     double getEffectiveMovingAverageRation() {
@@ -167,6 +175,7 @@ public class SamplingPercentageEstimatorSettings {
 
     /**
      * Adjusts sampling percentage set by user to account for zeros and above 100%
+     *
      * @param samplingPercentage
      * @return
      */
