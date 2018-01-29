@@ -97,7 +97,7 @@ public class SamplingPercentageEstimatorSettings {
      *
      * @return
      */
-    double getEffectiveTelemetryItemsPerSecond() {
+    double getEffectiveMaxTelemetryItemsPerSecond() {
         return this.maxTelemetryItemsPerSecond <= 0 ? 1e-12 : this.maxTelemetryItemsPerSecond;
     }
 
