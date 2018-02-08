@@ -78,6 +78,11 @@ afterEvaluate {
     }
 }
 
+javadoc {
+    source = sourceSets.main.allJava
+    classpath = configurations.compile + configurations.provided
+}
+
 task prepareSourcesArchive(type: Jar) {
     classifier = 'sources'
     from sourceSets.main.allJava
