@@ -583,6 +583,7 @@ public abstract class AiSmokeTest {
 					errorPatterns.add(Pattern.compile(".*?ERROR\\s+.*Exception.*"));
 
 					stackTracePatterns.add(Pattern.compile(".*\\s+at\\s+?(?:[A-Za-z][\\w$]+)(?:\\.(?:[A-Za-z][\\w$]+))*.*"));
+					stackTracePatterns.add(Pattern.compile(".*\\s+Caused by\\:\\s+?(?:[A-Za-z][\\w$]+)(?:\\.(?:[A-Za-z][\\w$]+))*.*"));
 
 					suppressionPatterns.add(Pattern.compile("failed to resolve instrumentation key"));
 				}
