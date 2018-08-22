@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.microsoft.applicationinsights.channel.concrete.nop.NopTelemetryChannel;
 import com.microsoft.applicationinsights.common.CommonUtils;
 import com.microsoft.applicationinsights.extensibility.ContextInitializer;
 import com.microsoft.applicationinsights.extensibility.TelemetryInitializer;
@@ -503,7 +504,7 @@ public class TelemetryClient {
      * Gets the channel used by the client.
      */
     TelemetryChannel getChannel() {
-        if (channel == null) {
+        if (this.channel == null) {
             this.channel = configuration.getChannel();
         }
 
