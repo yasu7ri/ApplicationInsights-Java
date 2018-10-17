@@ -1,13 +1,24 @@
 package com.microsoft.applicationinsights.extensibility.initializer;
 
 
+import com.google.common.collect.Multimap;
+import com.microsoft.applicationinsights.extensibility.initializer.RequestAggregatorTelemetryInitializer.UriFilterDescriptor;
+import com.microsoft.applicationinsights.extensibility.initializer.RequestAggregatorTelemetryInitializer.UriParameterDescriptor;
+import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
+import org.hamcrest.Description;
 import org.junit.*;
 
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
 
 public class RequestAggregatorTelemetryInitializerTests {
 
@@ -41,7 +52,7 @@ public class RequestAggregatorTelemetryInitializerTests {
             String g = um.group(gn);
             final String pname = entry.getValue();
             System.out.printf("%d: %s = %s%n", gn, pname, g);
-            sb2.append(url.substring(lastIndex, um.start(gn)))
+            sb2.append(url, lastIndex, um.start(gn))
                     .append('{')
                     .append(pname)
                     .append('}');
@@ -53,6 +64,46 @@ public class RequestAggregatorTelemetryInitializerTests {
 
     @Test
     public void generateUriParameterExtractionRegexReturnsRegexAndExtractsParameters() {
-        throw new UnsupportedOperationException("not implemented");
+        String spec = "/api/v1/sub/{subId}/resource/{resId}/create";
+
+        final ArrayList<UriParameterDescriptor> params = new ArrayList<>();
+        final String result = RequestAggregatorTelemetryInitializer.generateUriParameterExtractionRegex(spec, params);
+
+        System.out.println("result = "+result);
+        assertEquals(".*\\/api\\/v1\\/sub\\/(.*?)\\/resource\\/(.*?)\\/create.*", result);
+        assertThat(params, hasSize(2));
+        assertThat(params, hasItem(new UriParameterDescriptor("subId", 1)));
+        assertThat(params, hasItem(new UriParameterDescriptor("resId", 2)));
+    }
+
+    @Test
+    public void configGeneneratesProperSpec() {
+        Map<String, String> config = new HashMap<String, String>();
+        final String specName = "testSpec1";
+        final String specString = "/api/v1/sub/{subId}/resource/{resId}/create";
+        config.put(specName, specString);
+        RequestAggregatorTelemetryInitializer rati = new RequestAggregatorTelemetryInitializer(config);
+        assertFalse(rati.patternMap.isEmpty());
+
+        UriFilterDescriptor expectedDescriptor = new UriFilterDescriptor(specName, specString);
+        assertTrue(rati.patternMap.containsKey(expectedDescriptor));
+        final Collection<UriParameterDescriptor> params = rati.patternMap.get(expectedDescriptor);
+        assertThat(params, hasItem(new UriParameterDescriptor("subId", 1)));
+        assertThat(params, hasItem(new UriParameterDescriptor("resId", 2)));
+    }
+
+    @Test
+    public void  initializerFuzzesName() throws Exception {
+        Map<String, String> config = new HashMap<String, String>();
+        final String specName = "testSpec1";
+        final String specString = "/api/v1/sub/{subId}/resource/{resId}/create";
+        config.put(specName, specString);
+        RequestAggregatorTelemetryInitializer rati = new RequestAggregatorTelemetryInitializer(config);
+
+        RequestTelemetry rt = new RequestTelemetry();
+        rt.setUrl("http://api.host.com/api/v1/sub/1234-abcd-ef/resource/some-res/create?q=asdf");
+        rt.setName("POST /api/v1/sub/1234-abcd-ef/resource/some-res/create");
+        rati.initialize(rt);
+        assertEquals("POST /api/v1/sub/{subId}/resource/{resId}/create", rt.getName());
     }
 }

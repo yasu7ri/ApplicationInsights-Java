@@ -6,6 +6,7 @@ import com.microsoft.applicationinsights.extensibility.TelemetryInitializer;
 import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
 import com.microsoft.applicationinsights.telemetry.Telemetry;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -15,9 +16,17 @@ import java.util.regex.Pattern;
 
 public class RequestAggregatorTelemetryInitializer implements TelemetryInitializer {
 
-    class UriParameterDescriptor {
+    static class UriParameterDescriptor {
         private String name;
-        private int group;
+        private int group = -1;
+
+        public UriParameterDescriptor() {
+        }
+
+        public UriParameterDescriptor(String name, int group) {
+            this.name = name;
+            this.group = group;
+        }
 
         public String getName() {
             return name;
@@ -34,12 +43,44 @@ public class RequestAggregatorTelemetryInitializer implements TelemetryInitializ
         public void setGroup(int group) {
             this.group = group;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UriParameterDescriptor that = (UriParameterDescriptor) o;
+            return getGroup() == that.getGroup() &&
+                    Objects.equals(getName(), that.getName());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(getName(), getGroup());
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("UriParameterDescriptor{");
+            sb.append("name='").append(name).append('\'');
+            sb.append(", group=").append(group);
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
-    class UriFilterDescriptor {
+    static class UriFilterDescriptor {
         private String name;
         private String fullUriSpec;
         private Pattern regex;
+
+        public UriFilterDescriptor(String name, String fullUriSpec) {
+            this.name = name;
+            this.fullUriSpec = fullUriSpec;
+        }
+
+        public UriFilterDescriptor() {
+
+        }
 
         public String getName() {
             return name;
@@ -78,9 +119,18 @@ public class RequestAggregatorTelemetryInitializer implements TelemetryInitializ
         public int hashCode() {
             return Objects.hash(getName(), getFullUriSpec());
         }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("UriFilterDescriptor{");
+            sb.append("name='").append(name).append('\'');
+            sb.append(", fullUriSpec='").append(fullUriSpec).append('\'');
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
-    protected Multimap<UriFilterDescriptor, UriParameterDescriptor> patternMap = ListMultimapBuilder
+    Multimap<UriFilterDescriptor, UriParameterDescriptor> patternMap = ListMultimapBuilder
             .linkedHashKeys()
             .arrayListValues()
             .build();
@@ -101,35 +151,26 @@ public class RequestAggregatorTelemetryInitializer implements TelemetryInitializ
             descriptor.setName(entry.getKey());
             String spec = entry.getValue();
             descriptor.setFullUriSpec(spec);
-            // does updating spec change the matcher's reference?
-            Matcher specMatcher = parameterExtracterPattern.matcher(new String(spec));
-            for (int i = 1; i < specMatcher.groupCount(); i++) {
-                UriParameterDescriptor paramSpec = new UriParameterDescriptor();
-                final String name = specMatcher.group(i);
-                paramSpec.setName(name);
-                paramSpec.setGroup(i);
-                patternMap.put(descriptor, paramSpec);
-                spec = spec.replaceFirst(String.format("{%s}", name), "(.*?)");
-            }
-            spec = String.format(".*%s.*", spec);
-            descriptor.setRegex(Pattern.compile(spec));
+            List<UriParameterDescriptor> params = new ArrayList<UriParameterDescriptor>();
+            String regex = generateUriParameterExtractionRegex(spec, params);
+            descriptor.setRegex(Pattern.compile(regex));
+            patternMap.putAll(descriptor, params);
         }
     }
 
-    String generateUriParameterExtractionRegex(String uriSpec, List<UriParameterDescriptor> params) {
+    static String generateUriParameterExtractionRegex(String uriSpec, List<UriParameterDescriptor> params) {
         Matcher specMatcher = parameterExtracterPattern.matcher(uriSpec);
         StringBuffer regexBuffer = new StringBuffer();
         for (int i = 1; specMatcher.find(); i++) {
             UriParameterDescriptor paramSpec = new UriParameterDescriptor();
             String paramName = specMatcher.group(1);
             paramSpec.setName(paramName);
-            paramSpec.setGroup(1);
+            paramSpec.setGroup(i);
             params.add(paramSpec);
             specMatcher.appendReplacement(regexBuffer, Matcher.quoteReplacement("(.*?)"));
         }
         specMatcher.appendTail(regexBuffer);
         return regexBuffer.append(".*").insert(0, ".*").toString().replaceAll("\\/", Matcher.quoteReplacement("\\/"));
-
     }
 
 
@@ -141,15 +182,25 @@ public class RequestAggregatorTelemetryInitializer implements TelemetryInitializ
         }
 
         RequestTelemetry rt = (RequestTelemetry) telemetry;
-        String url = rt.getUrlString();
+        String rname = rt.getName(); // should be in the form GET /some/uri
         for (UriFilterDescriptor ufd : patternMap.keySet()) {
-            Matcher m = ufd.getRegex().matcher(url);
+            Matcher m = ufd.getRegex().matcher(rname);
             if (m.matches()) {
+                StringBuffer sb = new StringBuffer();
+                int lastIndex = 0;
                 for (UriParameterDescriptor upd : patternMap.get(ufd)) {
-                    String value = m.group(upd.getGroup());
+                    final int groupNumber = upd.getGroup();
+                    String value = m.group(groupNumber);
                     rt.getProperties().put(upd.getName(), value);
-
+                    sb.append(rname, lastIndex, m.start(groupNumber))
+                            .append("{")
+                            .append(upd.getName())
+                            .append("}");
+                    lastIndex = m.end(groupNumber);
                 }
+                sb.append(rname.substring(lastIndex));
+                rt.setName(sb.toString());
+                break;
             }
         }
     }
