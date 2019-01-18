@@ -166,6 +166,7 @@ public enum TelemetryConfigurationFactory {
         addHeartBeatModule(configuration);
         setContextInitializers(null, configuration);
         initializeComponents(configuration);
+        QuickPulse.INSTANCE.initialize();
     }
 
     private void setInternalLogger(SDKLoggerXmlElement sdkLogger, TelemetryConfiguration configuration) {
