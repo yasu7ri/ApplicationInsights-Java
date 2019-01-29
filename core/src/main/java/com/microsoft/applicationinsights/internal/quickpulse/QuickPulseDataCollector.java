@@ -163,6 +163,7 @@ public enum QuickPulseDataCollector {
 
     public void add(Telemetry telemetry) {
         if (!telemetry.getContext().getInstrumentationKey().equals(ikey)) {
+            System.err.printf("QuickPulse.add: ikeys did not match:%n\tin context: '%s'%n\tin quickpulse: '%s'%n");
             return;
         }
 
