@@ -27,6 +27,7 @@ public class LocalFileSystemUtils {
      * for the current user.
      */
     public static File getTempDir() {
+        // TODO validate input
         final String tempDirectory = System.getProperty("java.io.tmpdir");
         final String currentUserName = determineCurrentUserName();
 
