@@ -112,7 +112,7 @@ public class PartialSuccessHandler implements TransmissionHandler {
 	List<String> generateOriginalItems(TransmissionHandlerArgs args) {
 		List<String> originalItems = new ArrayList<String>();
 
-		if (args.getTransmission().getWebContentEncodingType() == "gzip") {
+		if ("gzip".equals(args.getTransmission().getWebContentEncodingType())) {
 
 			GZIPInputStream gis = null;
 			BufferedReader bufferedReader = null;
