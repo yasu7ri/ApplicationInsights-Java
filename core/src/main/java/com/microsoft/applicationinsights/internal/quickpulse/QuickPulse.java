@@ -122,19 +122,20 @@ public enum QuickPulse implements Stoppable {
             }
         }
 
-        thread.interrupt();
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            InternalLogger.INSTANCE.trace("Stack trace generated is %s", ExceptionUtils.getStackTrace(e));
-        }
-        senderThread.interrupt();
-        try {
-            senderThread.join();
-        } catch (InterruptedException e) {
-            InternalLogger.INSTANCE.trace("Stack trace generated is %s", ExceptionUtils.getStackTrace(e));
-        }
+        // FIXME there should have a better mechanism for killing threads that interrupt
+        interruptThread(thread);
+        interruptThread(senderThread);
 
         initialized = false;
+    }
+
+    private void interruptThread(Thread t) {
+        t.interrupt();
+        try {
+            t.join();
+        } catch (InterruptedException e) {
+            InternalLogger.INSTANCE.trace("Interrupted joining thread '%s': %s", t.getName(), ExceptionUtils.getStackTrace(e));
+            Thread.currentThread().interrupt();
+        }
     }
 }
