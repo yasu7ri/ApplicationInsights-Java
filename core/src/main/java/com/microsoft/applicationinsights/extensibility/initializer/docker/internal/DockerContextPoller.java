@@ -22,6 +22,8 @@
 package com.microsoft.applicationinsights.extensibility.initializer.docker.internal;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
+
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -56,10 +58,10 @@ public class DockerContextPoller extends Thread {
 
             if (!fileExists) {
                 try {
-                    Thread.sleep(THREAD_POLLING_INTERVAL_MS);
+                    TimeUnit.MILLISECONDS.sleep(THREAD_POLLING_INTERVAL_MS);
                     continue;
                 } catch (InterruptedException e) {
-                    InternalLogger.INSTANCE.warn("Interrupted during docker context poller delay: %s", ExceptionUtils.getStackTrace(e));
+                    InternalLogger.INSTANCE.warn("Interrupted waiting for docker context file to become available: %s", ExceptionUtils.getStackTrace(e));
                     Thread.currentThread().interrupt();
                 }
             }
