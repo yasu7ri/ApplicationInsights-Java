@@ -95,6 +95,7 @@ public final class ActiveTransmissionLoader implements TransmissionsLoader {
                         barrier.await();
                     } catch (InterruptedException e) {
                         InternalLogger.INSTANCE.error("Interrupted during barrier wait, exception: %s", e.toString());
+                        Thread.currentThread().interrupt();
                     } catch (BrokenBarrierException e) {
                         InternalLogger.INSTANCE.error("Failed during barrier wait, exception: %s", e.toString());
                     }
@@ -152,6 +153,7 @@ public final class ActiveTransmissionLoader implements TransmissionsLoader {
             return true;
         } catch (InterruptedException e) {
             InternalLogger.INSTANCE.error("Interrupted during barrier wait, exception: %s", e.toString());
+            Thread.currentThread().interrupt();
         } catch (BrokenBarrierException e) {
             InternalLogger.INSTANCE.error("Failed during barrier wait, exception: %s", e.toString());
         }
@@ -168,6 +170,7 @@ public final class ActiveTransmissionLoader implements TransmissionsLoader {
                 thread.join();
             } catch (InterruptedException e) {
                 InternalLogger.INSTANCE.error("Interrupted during join of active transmission loader, exception: %s", e.toString());
+                Thread.currentThread().interrupt();
             }
         }
     }
