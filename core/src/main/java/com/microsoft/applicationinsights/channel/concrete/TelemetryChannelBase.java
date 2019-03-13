@@ -148,9 +148,9 @@ public abstract class TelemetryChannelBase<T> implements TelemetryChannel {
         boolean developerMode = false;
         String endpointAddress = null;
         int maxInstantRetries = DEFAULT_MAX_INSTANT_RETRY;
+        String maxTransmissionStorageCapacity = null;
 
         LimitsEnforcer maxTelemetryBufferCapacityEnforcer = createDefaultMaxTelemetryBufferCapacityEnforcer(null);
-
         LimitsEnforcer sendIntervalInSecondsEnforcer = createDefaultSendIntervalInSecondsEnforcer(null);
 
         boolean throttling = true;
@@ -176,10 +176,9 @@ public abstract class TelemetryChannelBase<T> implements TelemetryChannel {
                     .normalizeStringValue(namesAndValues.get(MAX_TELEMETRY_BUFFER_CAPACITY_NAME));
             sendIntervalInSecondsEnforcer
                     .normalizeStringValue(namesAndValues.get(FLUSH_BUFFER_TIMEOUT_IN_SECONDS_NAME));
+            maxTransmissionStorageCapacity = namesAndValues.get(MAX_TRANSMISSION_STORAGE_CAPACITY_NAME);
         }
 
-        String maxTransmissionStorageCapacity =
-                namesAndValues.get(MAX_TRANSMISSION_STORAGE_CAPACITY_NAME);
         initialize(
                 endpointAddress,
                 maxTransmissionStorageCapacity,
