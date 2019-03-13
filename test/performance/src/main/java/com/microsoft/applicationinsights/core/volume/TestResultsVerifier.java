@@ -70,7 +70,7 @@ final class TestResultsVerifier {
             onWaitExpired();
         }
         catch (InterruptedException e) {
-        } finally {
+            Thread.currentThread().interrupt();
         }
     }
 
