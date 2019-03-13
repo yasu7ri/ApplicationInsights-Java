@@ -102,15 +102,9 @@ public final class ConfigurationFileLocator {
     }
 
     private static void logException(Throwable t, String message) {
-        if (t.getCause() != null) {
-            InternalLogger.INSTANCE.warn("Failed to find configuration file, exception while fetching from %s: " +
-                            "Exception : '%s'",
-                    message, ExceptionUtils.getStackTrace(t));
-        } else {
-            InternalLogger.INSTANCE.warn("Failed to find configuration file, exception while fetching from %s: " +
-                            "Exception : '%s'",
-                    message, ExceptionUtils.getStackTrace(t));
-        }
+        InternalLogger.INSTANCE.warn("Failed to find configuration file, exception while fetching from %s: " +
+                        "Exception : '%s'",
+                message, ExceptionUtils.getStackTrace(t));
     }
 
     private String getConfigurationFromCurrentClassLoader() {
