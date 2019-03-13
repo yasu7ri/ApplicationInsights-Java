@@ -57,21 +57,13 @@ class JaxbAppInsightsConfigurationBuilder implements AppInsightsConfigurationBui
             ApplicationInsightsXmlConfiguration applicationInsights = (ApplicationInsightsXmlConfiguration)unmarshaller.unmarshal(resourceFileReader);
 
             return applicationInsights;
-        } catch (JAXBException e) {
-            if (e.getCause() != null) {
-                InternalLogger.INSTANCE.error("Failed to parse configuration file: '%s'",
-                        ExceptionUtils.getStackTrace(e));
-            } else {
-                InternalLogger.INSTANCE.error("Failed to parse configuration file: '%s'",
-                        ExceptionUtils.getStackTrace(e));
-            }
-        } catch (NullPointerException e) {
-            e.printStackTrace();
+        } catch (JAXBException | NullPointerException e) {
+            InternalLogger.INSTANCE.error("Failed to parse configuration file: '%s'", ExceptionUtils.getStackTrace(e));
         } finally {
             try {
                 resourceFile.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                // chomp
             }
         }
 
