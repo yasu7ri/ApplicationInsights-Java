@@ -61,6 +61,7 @@ final class DefaultQuickPulseCoordinator implements QuickPulseCoordinator, Runna
                 try {
                     Thread.sleep(sleepInMS);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
             }
         } catch (ThreadDeath td) {
