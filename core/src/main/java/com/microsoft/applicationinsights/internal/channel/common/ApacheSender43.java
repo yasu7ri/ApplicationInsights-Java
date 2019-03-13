@@ -104,6 +104,7 @@ final class ApacheSender43 implements ApacheSender {
                         try {
                             TimeUnit.MILLISECONDS.sleep(3);
                         } catch (InterruptedException e){
+                            Thread.currentThread().interrupt();
                         }
                     }
                     isClientInitialized = true;
