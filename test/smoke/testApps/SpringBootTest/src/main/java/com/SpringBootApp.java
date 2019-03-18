@@ -1,7 +1,7 @@
 package com;
 
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
-import com.microsoft.applicationinsights.web.internal.ThreadContext;
+import io.opencensus.trace.Span;
+import io.opencensus.trace.Tracing;
 import java.util.concurrent.Executor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -46,25 +46,22 @@ public class SpringBootApp extends SpringBootServletInitializer {
 
 		@Override
 		public void execute(Runnable command) {
-			super.execute(new Wrapped(command, ThreadContext.getRequestTelemetryContext()));
+			super.execute(new Wrapped(command, Tracing.getTracer().getCurrentSpan()));
 		}
 	}
 
 	private final class Wrapped implements Runnable {
 		private final Runnable task;
-		private final RequestTelemetryContext rtc;
+		private final Span span;
 
-		Wrapped(Runnable task, RequestTelemetryContext rtc) {
+		Wrapped(Runnable task, Span span) {
 			this.task = task;
-			this.rtc = rtc;
+			this.span = span;
 		}
 
 		@Override
 		public void run() {
-			if (ThreadContext.getRequestTelemetryContext() != null) {
-				ThreadContext.remove();
-			}
-			ThreadContext.setRequestTelemetryContext(rtc);
+			Tracing.getTracer().withSpan(span);
 			task.run();
 		}
 	}

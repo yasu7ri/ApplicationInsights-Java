@@ -41,7 +41,7 @@ import com.microsoft.applicationinsights.web.utils.JettyTestServer;
  * Created by yonisha on 2/9/2015.
  */
 public class WebUserTrackingTelemetryModuleTests {
-    private static class TestModuleInitializer implements TelemetryInitializer {
+/*    private static class TestModuleInitializer implements TelemetryInitializer {
         private final String expectedUserId;
 
         private TestModuleInitializer(String expectedUserId) {
@@ -125,5 +125,5 @@ public class WebUserTrackingTelemetryModuleTests {
         Assert.assertNull(cookiesContainer.getUserCookie());
     }
 
-    // endregion Tests
+    // endregion Tests*/
 }

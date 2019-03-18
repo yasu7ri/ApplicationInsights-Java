@@ -21,7 +21,7 @@
 package com.microsoft.applicationinsights.web.javaee;
 
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
+import com.microsoft.applicationinsights.web.internal.HttpRequestContext;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -45,14 +45,14 @@ public class RequestNameInterceptor {
 
     private void setRequestNameSafe(InvocationContext ic) {
         try {
-            RequestTelemetryContext context = ThreadContext.getRequestTelemetryContext();
+            HttpRequestContext context = ThreadContext.getRequestTelemetryContext();
             if (context != null) {
 
                 String actionName = String.format("%s.%s", ic.getMethod().getDeclaringClass().getName(), ic.getMethod().getName());
-                String httpMethod = context.getHttpRequestTelemetry().getHttpMethod();
+                String httpMethod = context.getHttpServletRequest().getMethod();
                 String requestName = String.format("%s %s", httpMethod, actionName);
                 
-                context.getHttpRequestTelemetry().setName(requestName);
+                context.OperationName = requestName;
             }
         } catch (Exception e) {
             InternalLogger.INSTANCE.error(

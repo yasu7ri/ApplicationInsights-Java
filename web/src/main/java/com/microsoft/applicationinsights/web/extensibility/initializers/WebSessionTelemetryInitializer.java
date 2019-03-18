@@ -45,8 +45,7 @@ public class WebSessionTelemetryInitializer extends WebTelemetryInitializerBase 
             return;
         }
 
-        RequestTelemetry requestTelemetry = ThreadContext.getRequestTelemetryContext().getHttpRequestTelemetry();
-        SessionContext requestSessionContext = requestTelemetry.getContext().getSession();
+        SessionContext requestSessionContext = ThreadContext.getRequestTelemetryContext().SessionContext;
         if (requestSessionContext == null) {
             return;
         }

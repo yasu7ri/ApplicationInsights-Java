@@ -46,8 +46,7 @@ public class WebUserTelemetryInitializer extends WebTelemetryInitializerBase {
             return;
         }
 
-        RequestTelemetry requestTelemetry = ThreadContext.getRequestTelemetryContext().getHttpRequestTelemetry();
-        UserContext requestUserContext = requestTelemetry.getContext().getUser();
+        UserContext requestUserContext = ThreadContext.getRequestTelemetryContext().UserContext;
         if (requestUserContext == null) {
             return;
         }

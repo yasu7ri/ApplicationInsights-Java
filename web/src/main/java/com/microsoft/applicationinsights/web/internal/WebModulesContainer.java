@@ -35,10 +35,10 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 public class WebModulesContainer<P, Q> {
     private List<WebTelemetryModule<P, Q>> modules = new ArrayList<>();
     private int modulesCount = 0;
-    private RequestTelemetryContext requestTelemetryContext;
+    private HttpRequestContext requestTelemetryContext;
 
     public void setRequestTelemetryContext(
-        RequestTelemetryContext requestTelemetryContext) {
+        HttpRequestContext requestTelemetryContext) {
         this.requestTelemetryContext = requestTelemetryContext;
     }
 

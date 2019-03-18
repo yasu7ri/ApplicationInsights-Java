@@ -24,12 +24,15 @@ package com.microsoft.applicationinsights.web.extensibility.initializers;
 import com.microsoft.applicationinsights.extensibility.TelemetryInitializer;
 import com.microsoft.applicationinsights.telemetry.Telemetry;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
+import io.opencensus.trace.Tracer;
+import io.opencensus.trace.Tracing;
 
 /**
  * Created by yonisha on 2/16/2015.
  */
 public abstract class WebTelemetryInitializerBase implements TelemetryInitializer {
 
+    protected io.opencensus.trace.Tracer Tracer = Tracing.getTracer();
     /**
      * Initializes properties of the given telemetry.
      * @param telemetry The {@link com.microsoft.applicationinsights.telemetry.Telemetry} to initialize.

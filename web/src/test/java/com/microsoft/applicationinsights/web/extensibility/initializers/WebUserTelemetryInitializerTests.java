@@ -6,7 +6,6 @@ import org.junit.Test;
 import com.microsoft.applicationinsights.internal.util.DateTimeUtils;
 import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
 import com.microsoft.applicationinsights.telemetry.TraceTelemetry;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
 
 import java.util.Date;
@@ -16,7 +15,7 @@ import java.util.Date;
  */
 public class WebUserTelemetryInitializerTests {
 
-    private static final String REQUEST_USER_ID = "Request_USER_ID";
+/*    private static final String REQUEST_USER_ID = "Request_USER_ID";
     private static Date acquisitionTime;
     private WebUserTelemetryInitializer userTelemetryInitializer = new WebUserTelemetryInitializer();
 
@@ -73,5 +72,5 @@ public class WebUserTelemetryInitializerTests {
         userTelemetryInitializer.onInitializeTelemetry(telemetry);
 
         Assert.assertEquals(acquisitionTime, telemetry.getContext().getUser().getAcquisitionDate());
-    }
+    }*/
 }

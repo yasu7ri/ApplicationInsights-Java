@@ -22,11 +22,11 @@
 package com.microsoft.applicationinsights.web.extensibility.initializers;
 
 import com.microsoft.applicationinsights.common.CommonUtils;
-import com.microsoft.applicationinsights.internal.logger.InternalLogger;
-import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
 import com.microsoft.applicationinsights.telemetry.Telemetry;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
+import com.microsoft.applicationinsights.web.internal.correlation.CorrelationContext;
+import io.opencensus.trace.Span;
+import io.opencensus.trace.SpanContext;
 import java.util.Map;
 
 /**
@@ -39,39 +39,36 @@ public class WebOperationIdTelemetryInitializer extends WebTelemetryInitializerB
      */
     @Override
     protected void onInitializeTelemetry(Telemetry telemetry) {
-        RequestTelemetryContext telemetryContext = ThreadContext.getRequestTelemetryContext();
-
-        if (telemetryContext == null) {
-            InternalLogger.INSTANCE.error(
-                "Unexpected error. No telemetry context found. OperationContext will not be initialized.");
-                return;
-        }
-
-        RequestTelemetry requestTelemetry = telemetryContext.getHttpRequestTelemetry();
-        String currentOperationId = requestTelemetry.getContext().getOperation().getId();
-
-        // if there's no current operation (e.g. telemetry being initialized outside of 
-        // request scope), just initialize operationId to the generic id currently in request
-        if (currentOperationId == null || currentOperationId.isEmpty()) {
-            telemetry.getContext().getOperation().setId(requestTelemetry.getId());
+        Span currentSpan = Tracer.getCurrentSpan();
+        if (currentSpan == null){
             return;
         }
 
+        SpanContext currentSpanContext = currentSpan.getContext();
+
+        if (currentSpanContext == null || !currentSpanContext.isValid()) {
+            return;
+        }
+
+        String traceId = currentSpanContext.getTraceId().toLowerBase16();
         // set operationId to the request telemetry's operation ID
         if (CommonUtils.isNullOrEmpty(telemetry.getContext().getOperation().getId())) {
-            telemetry.getContext().getOperation().setId(currentOperationId);
+            telemetry.getContext().getOperation().setId(traceId);
         }
 
-        // set operation parentId to the request telemetry's ID
+        // set operationId to the request telemetry's operation ID
         if (CommonUtils.isNullOrEmpty(telemetry.getContext().getOperation().getParentId())) {
-            telemetry.getContext().getOperation().setParentId(requestTelemetry.getId());
+            telemetry.getContext().getOperation().setParentId("|" + traceId + "." + currentSpanContext.getSpanId().toLowerBase16() + ".");
         }
 
-        // add correlation context to properties
-        Map<String, String> correlationContextMap = telemetryContext.getCorrelationContext().getMappings();
-        for (String key : correlationContextMap.keySet()) {
-            if (telemetry.getProperties().get(key) == null) {
-                telemetry.getProperties().put(key, correlationContextMap.get(key));
+        CorrelationContext correlationContext = ThreadContext.getRequestTelemetryContext().getCorrelationContext();
+        if (correlationContext != null) {
+            // add correlation context to properties
+            Map<String, String> correlationContextMap = correlationContext.getMappings();
+            for (String key : correlationContextMap.keySet()) {
+                if (telemetry.getProperties().get(key) == null) {
+                    telemetry.getProperties().put(key, correlationContextMap.get(key));
+                }
             }
         }
     }

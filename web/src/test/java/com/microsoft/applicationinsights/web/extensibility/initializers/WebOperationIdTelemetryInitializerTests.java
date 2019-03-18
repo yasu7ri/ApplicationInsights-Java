@@ -28,7 +28,6 @@ import com.microsoft.applicationinsights.extensibility.context.OperationContext;
 import com.microsoft.applicationinsights.internal.util.DateTimeUtils;
 import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
 import com.microsoft.applicationinsights.telemetry.TraceTelemetry;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
 import com.microsoft.applicationinsights.web.utils.JettyTestServer;
 import com.microsoft.applicationinsights.web.utils.MockTelemetryChannel;
@@ -85,7 +84,7 @@ public class WebOperationIdTelemetryInitializerTests {
         Assert.assertEquals("Operation id not match", requestTelemetry.getId(), "|" + requestTelemetry.getContext().getOperation().getId() + ".");
     }
 
-    @Test
+/*    @Test
     public void testTelemetryInitializedWithOperationId() {
         RequestTelemetryContext context = new RequestTelemetryContext(DateTimeUtils.getDateTimeNow().getTime());
         ThreadContext.setRequestTelemetryContext(context);
@@ -93,7 +92,7 @@ public class WebOperationIdTelemetryInitializerTests {
         OperationContext operationContext = createAndInitializeTelemetry();
 
         Assert.assertEquals("Operation ID hasn't been set.", context.getHttpRequestTelemetry().getId(), operationContext.getId());
-    }
+    }*/
 
     @Test
     public void testInitializerDoesNotOverrideCustomerOperationId() {

@@ -21,10 +21,7 @@
 
 package com.microsoft.applicationinsights.web.extensibility.initializers;
 
-import com.microsoft.applicationinsights.common.CommonUtils;
-import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
 import com.microsoft.applicationinsights.telemetry.Telemetry;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
 
 /**
@@ -39,28 +36,8 @@ public class WebOperationNameTelemetryInitializer extends WebTelemetryInitialize
      */
     @Override
     protected void onInitializeTelemetry(Telemetry telemetry) {
-        RequestTelemetryContext telemetryContext = ThreadContext.getRequestTelemetryContext();
-        String operationName = telemetryContext.getHttpRequestTelemetry().getName();
-
-        updateRequestNameIfRequestTelemetry(telemetry, operationName);
+        String operationName = ThreadContext.getRequestTelemetryContext().OperationName;
 
         telemetry.getContext().getOperation().setName(operationName);
     }
-
-    // region Private
-
-    private void updateRequestNameIfRequestTelemetry(Telemetry telemetry, String operationName) {
-        if (!(telemetry instanceof RequestTelemetry)) {
-            return;
-        }
-
-        RequestTelemetry requestTelemetry = (RequestTelemetry)telemetry;
-
-        // We only update the request telemetry name if not already provided by the user.
-        if (requestTelemetry != null && CommonUtils.isNullOrEmpty(requestTelemetry.getName())) {
-            requestTelemetry.setName(operationName);
-        }
-    }
-
-    // endregion Private
 }

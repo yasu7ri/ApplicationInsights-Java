@@ -29,13 +29,13 @@ public class ThreadContext {
     // No object creation allowed for this class.
     private ThreadContext() {}
 
-    private static final InheritableThreadLocal<RequestTelemetryContext> threadLocal = new InheritableThreadLocal<>();
+    private static final InheritableThreadLocal<HttpRequestContext> threadLocal = new InheritableThreadLocal<>();
 
     /**
      * Set the context in ThreadLocal
      * @param telemetryContext
      */
-    public static void setRequestTelemetryContext(RequestTelemetryContext telemetryContext) {
+    public static void setRequestTelemetryContext(HttpRequestContext telemetryContext) {
         threadLocal.set(telemetryContext);
     }
 
@@ -43,7 +43,7 @@ public class ThreadContext {
      * Get the context from ThreadLocal
      * @return
      */
-    public static RequestTelemetryContext getRequestTelemetryContext() {
+    public static HttpRequestContext getRequestTelemetryContext() {
         return threadLocal.get();
     }
 

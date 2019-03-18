@@ -24,7 +24,7 @@ package com.microsoft.applicationinsights.web.extensibility.modules;
 import com.microsoft.applicationinsights.TelemetryConfiguration;
 import com.microsoft.applicationinsights.extensibility.TelemetryModule;
 import com.microsoft.applicationinsights.extensibility.context.UserContext;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
+import com.microsoft.applicationinsights.web.internal.HttpRequestContext;
 import com.microsoft.applicationinsights.web.internal.cookies.UserCookie;
 import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
@@ -37,18 +37,18 @@ public class WebUserTrackingTelemetryModule implements
     WebTelemetryModule<HttpServletRequest, HttpServletResponse>, TelemetryModule {
 
     /**
-     * The {@link RequestTelemetryContext} instance propogated from
+     * The {@link HttpRequestContext} instance propogated from
      * {@link com.microsoft.applicationinsights.web.internal.httputils.HttpServerHandler}
      */
-    private RequestTelemetryContext requestTelemetryContext;
+    private HttpRequestContext requestTelemetryContext;
 
     public void setRequestTelemetryContext(
-        RequestTelemetryContext requestTelemetryContext) {
+        HttpRequestContext requestTelemetryContext) {
         this.requestTelemetryContext = requestTelemetryContext;
     }
 
     /** Used for test */
-    RequestTelemetryContext getRequestTelemetryContext() {
+    HttpRequestContext getRequestTelemetryContext() {
         return this.requestTelemetryContext;
     }
 
@@ -68,7 +68,7 @@ public class WebUserTrackingTelemetryModule implements
      */
     @Override
     public void onBeginRequest(HttpServletRequest req, HttpServletResponse res) {
-        RequestTelemetryContext context = this.requestTelemetryContext;
+        HttpRequestContext context = this.requestTelemetryContext;
         UserCookie userCookie =
             com.microsoft.applicationinsights.web.internal.cookies.Cookie.getCookie(
                 UserCookie.class, req, UserCookie.COOKIE_NAME);
@@ -78,7 +78,7 @@ public class WebUserTrackingTelemetryModule implements
         String userId = userCookie.getUserId();
         Date acquisitionDate = userCookie.getAcquisitionDate();
         context.setUserCookie(userCookie);
-        UserContext userContext = context.getHttpRequestTelemetry().getContext().getUser();
+        UserContext userContext = context.UserContext;
         userContext.setId(userId);
         userContext.setAcquisitionDate(acquisitionDate);
     }

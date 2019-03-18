@@ -21,11 +21,11 @@
 
 package com.microsoft.applicationinsights.web.struts;
 
+import com.microsoft.applicationinsights.web.internal.HttpRequestContext;
 import com.opensymphony.xwork2.ActionContext;
 import com.opensymphony.xwork2.ActionInvocation;
 import com.opensymphony.xwork2.interceptor.Interceptor;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -75,17 +75,17 @@ public class RequestNameInterceptor implements Interceptor {
 
     private void setRequestNameSafe() {
         try {
-            RequestTelemetryContext context = ThreadContext.getRequestTelemetryContext();
+            HttpRequestContext context = ThreadContext.getRequestTelemetryContext();
 
             if (context != null) {
 
                 // Here we also rely on the HttpRequestTelemetry information to extract the http method,
                 // which already set during the web request tracking filter execution.
                 String actionName = ActionContext.getContext().getName();
-                String httpMethod = context.getHttpRequestTelemetry().getHttpMethod();
+                String httpMethod = context.getHttpServletRequest().getMethod();
                 String requestName = String.format("%s /%s", httpMethod, actionName);
 
-                context.getHttpRequestTelemetry().setName(requestName);
+                context.OperationName = requestName;
             }
         } catch (Exception e) {
             InternalLogger.INSTANCE.error(

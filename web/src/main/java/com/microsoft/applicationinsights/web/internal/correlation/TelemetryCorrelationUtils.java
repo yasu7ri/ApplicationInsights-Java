@@ -24,8 +24,9 @@ package com.microsoft.applicationinsights.web.internal.correlation;
 import com.microsoft.applicationinsights.TelemetryConfiguration;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
+import io.opencensus.trace.AttributeValue;
+import io.opencensus.trace.Span;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.Enumeration;
@@ -39,7 +40,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public class TelemetryCorrelationUtils {
 
-    public static final String CORRELATION_HEADER_NAME = "Request-Id";
+  public static final String CORRELATION_HEADER_NAME = "Request-Id";
 	public static final String CORRELATION_CONTEXT_HEADER_NAME = "Correlation-Context";
 	public static final String REQUEST_CONTEXT_HEADER_NAME = "Request-Context";
 	public static final String REQUEST_CONTEXT_HEADER_APPID_KEY = "appId";
@@ -104,12 +105,12 @@ public class TelemetryCorrelationUtils {
 	}
 
 	/**
-	 * Generates a child Id for dependencies. Dependencies are children of requests and, therefore, their ID's 
+	 * Generates a child Id for dependencies. Dependencies are children of requests and, therefore, their ID's
 	 * reflect this. The generated ID is based on the current request scope (stored in TLS).
 	 * @return The child Id.
 	 */
-	public static String generateChildDependencyId() {
-		
+	/*public static String generateChildDependencyId() {
+
 		try {
 
 			RequestTelemetryContext context = ThreadContext.getRequestTelemetryContext();
@@ -137,7 +138,7 @@ public class TelemetryCorrelationUtils {
 		}
 
 		return null;
-	}
+	}*/
 
 	/**
 	 * Retrieves the currently stored correlation context from the request context.
@@ -205,10 +206,10 @@ public class TelemetryCorrelationUtils {
 	 * Resolves the source of a request based on request header information and the appId of the current
 	 * component, which is retrieved via a query to the AppInsights service.
 	 * @param request The servlet request.
-	 * @param requestTelemetry The request telemetry in which source will be populated.
+	 * @param span The request telemetry in which source will be populated.
 	 * @param instrumentationKey The instrumentation key for the current component.
 	 */
-	public static void resolveRequestSource(HttpServletRequest request, RequestTelemetry requestTelemetry, String instrumentationKey) {
+	public static void resolveRequestSource(HttpServletRequest request, Span span, String instrumentationKey) {
 
 		try {
 			if (request == null) {
@@ -216,13 +217,8 @@ public class TelemetryCorrelationUtils {
 				return;
 			}
 	
-			if (requestTelemetry == null) {
+			if (span == null) {
 				InternalLogger.INSTANCE.error("Failed to resolve correlation. requestTelemetry is null.");
-				return;
-			}
-
-			if (requestTelemetry.getSource() != null) {
-				InternalLogger.INSTANCE.trace("Skip resolving request source as it is already initialized.");
 				return;
 			}
 
@@ -238,7 +234,7 @@ public class TelemetryCorrelationUtils {
 			}
 			
 			String source = generateSourceTargetCorrelation(instrumentationKey, requestContext);
-			requestTelemetry.setSource(source);
+			span.putAttribute("ai-source", AttributeValue.stringAttributeValue(source));
 		}
 		catch(Exception ex) {
 			InternalLogger.INSTANCE.error("Failed to resolve request source. Exception information: %s", ex.toString());

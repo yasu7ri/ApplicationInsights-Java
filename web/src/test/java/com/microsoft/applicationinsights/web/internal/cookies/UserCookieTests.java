@@ -30,7 +30,6 @@ import javax.servlet.http.Cookie;
 import java.util.Date;
 import com.microsoft.applicationinsights.internal.util.LocalStringsUtils;
 import com.microsoft.applicationinsights.internal.util.DateTimeUtils;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -41,7 +40,7 @@ import static org.mockito.Mockito.when;
 public class UserCookieTests {
     // region Members
 
-    private static Cookie defaultCookie;
+/*    private static Cookie defaultCookie;
     private static String userId;
     private static Date acquisitionTime;
     private static RequestTelemetryContext requestTelemetryContextMock;
@@ -111,5 +110,5 @@ public class UserCookieTests {
         new UserCookie(corruptedCookie);
     }
 
-    // endregion Private
+    // endregion Private*/
 }

@@ -28,7 +28,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import com.microsoft.applicationinsights.internal.util.LocalStringsUtils;
 import com.microsoft.applicationinsights.extensibility.context.SessionContext;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -43,7 +42,7 @@ public class SessionCookieTests {
     private static Cookie defaultCookie;
     private static String sessionId;
     private static SessionContext sessionContext;
-    private static RequestTelemetryContext requestTelemetryContextMock;
+/*    private static RequestTelemetryContext requestTelemetryContextMock;
 
     // endregion Members
 
@@ -94,5 +93,5 @@ public class SessionCookieTests {
         return new SessionCookie(cookie);
     }
 
-    // endregion Private
+    // endregion Private*/
 }

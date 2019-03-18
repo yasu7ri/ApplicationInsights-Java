@@ -26,6 +26,9 @@ import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
 import com.microsoft.applicationinsights.telemetry.Telemetry;
 import com.microsoft.applicationinsights.web.extensibility.initializers.WebTelemetryInitializerBase;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
+import io.opencensus.trace.AttributeValue;
+import io.opencensus.trace.Span;
+import io.opencensus.trace.Tracing;
 
 /**
  * Created by yonisha on 6/21/2015.
@@ -34,15 +37,6 @@ public class WebRequestRunIdTelemetryInitializer extends WebTelemetryInitializer
 
     @Override
     protected void onInitializeTelemetry(Telemetry telemetry) {
-        RequestTelemetry requestTelemetry = ThreadContext.getRequestTelemetryContext().getHttpRequestTelemetry();
 
-        String runIdPropertyName = WebRequestRunIdTelemetryModule.RUN_ID_QUERY_PARAM_NAME;
-        String runId = requestTelemetry.getProperties().get(runIdPropertyName);
-
-        if (LocalStringsUtils.isNullOrEmpty(runId)) {
-            return;
-        }
-
-        telemetry.getProperties().put(runIdPropertyName, runId);
     }
 }

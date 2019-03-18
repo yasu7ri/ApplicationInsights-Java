@@ -65,112 +65,113 @@ public final class HttpClientMethodVisitor extends AbstractHttpMethodVisitor {
         deltaInNS = this.newLocal(Type.LONG_TYPE);
         mv.visitVarInsn(LSTORE, deltaInNS);
 
-        // This byte code instrumentation is responsible for injecting legacy AI correlation headers which include
-        // Request-Id and Request-Context and Correlation-Context. By default this headers are propagated if W3C
-        // is turned off. Please refer to generateChildDependencyId(), retrieveCorrelationContext(),
-        // retrieveApplicationCorrelationId() from TelemetryCorrelationUtils class for details on how these headers
-        // are created.
-        if (!isW3CEnabled) {
-            // generate child ID
-            mv.visitMethodInsn(INVOKESTATIC, "com/microsoft/applicationinsights/web/internal/correlation/TelemetryCorrelationUtils", "generateChildDependencyId", "()Ljava/lang/String;", false);
-            childIdLocal = this.newLocal(Type.getType(Object.class));
-            mv.visitVarInsn(ASTORE, childIdLocal);
+        // generate child ID
+        mv.visitMethodInsn(INVOKESTATIC,
+            "com/microsoft/applicationinsights/web/internal/correlation/TelemetryCorrelationUtils",
+            "generateChildDependencyId", "()Ljava/lang/String;", false);
+        childIdLocal = this.newLocal(Type.getType(Object.class));
+        mv.visitVarInsn(ASTORE, childIdLocal);
 
-            // retrieve correlation context
-            mv.visitMethodInsn(INVOKESTATIC, "com/microsoft/applicationinsights/web/internal/correlation/TelemetryCorrelationUtils", "retrieveCorrelationContext", "()Ljava/lang/String;", false);
-            correlationContextLocal = this.newLocal(Type.getType(Object.class));
-            mv.visitVarInsn(ASTORE, correlationContextLocal);
+        // retrieve correlation context
+        mv.visitMethodInsn(INVOKESTATIC,
+            "com/microsoft/applicationinsights/web/internal/correlation/TelemetryCorrelationUtils",
+            "retrieveCorrelationContext", "()Ljava/lang/String;", false);
+        correlationContextLocal = this.newLocal(Type.getType(Object.class));
+        mv.visitVarInsn(ASTORE, correlationContextLocal);
 
-            // retrieve request context
-            mv.visitMethodInsn(INVOKESTATIC, "com/microsoft/applicationinsights/web/internal/correlation/TelemetryCorrelationUtils", "retrieveApplicationCorrelationId", "()Ljava/lang/String;", false);
-            appCorrelationId = this.newLocal(Type.getType(Object.class));
-            mv.visitVarInsn(ASTORE, appCorrelationId);
+        // retrieve request context
+        mv.visitMethodInsn(INVOKESTATIC,
+            "com/microsoft/applicationinsights/web/internal/correlation/TelemetryCorrelationUtils",
+            "retrieveApplicationCorrelationId", "()Ljava/lang/String;", false);
+        appCorrelationId = this.newLocal(Type.getType(Object.class));
+        mv.visitVarInsn(ASTORE, appCorrelationId);
 
-            // inject headers
-            // 2 because the 1 is the method being instrumented
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitLdcInsn("Correlation-Context");
+        mv.visitVarInsn(ALOAD, correlationContextLocal);
+        mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "addHeader",
+            "(Ljava/lang/String;Ljava/lang/String;)V", true);
+
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitLdcInsn("Request-Context");
+        mv.visitVarInsn(ALOAD, appCorrelationId);
+        mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "addHeader",
+            "(Ljava/lang/String;Ljava/lang/String;)V", true);
+
+        // If W3C is enabled, we propagate Traceparent, Tracecontext headers
+        // to enable correlation. Please refer to generateChildDependencyTraceparent(), generateChildDependencyTraceparent()
+        // from TraceContextCorrelation class on how to generate this headers.
+
+        // generate child Traceparent
+        mv.visitMethodInsn(INVOKESTATIC,
+            "com/microsoft/applicationinsights/web/internal/correlation/TraceContextCorrelation",
+            "generateChildDependencyTraceparent", "()Ljava/lang/String;", false);
+        traceparent = this.newLocal(Type.getType(Object.class));
+        mv.visitVarInsn(ASTORE, traceparent);
+
+        mv.visitVarInsn(ALOAD, traceparent);
+        mv.visitMethodInsn(INVOKESTATIC,
+            "com/microsoft/applicationinsights/web/internal/correlation/TraceContextCorrelation",
+            "createChildIdFromTraceparentString", "(Ljava/lang/String;)Ljava/lang/String;", false);
+        childIdLocal = this.newLocal(Type.getType(Object.class));
+        mv.visitVarInsn(ASTORE, childIdLocal);
+
+        // retrieve tracestate
+        mv.visitMethodInsn(INVOKESTATIC,
+            "com/microsoft/applicationinsights/web/internal/correlation/TraceContextCorrelation",
+            "retriveTracestate", "()Ljava/lang/String;", false);
+        tracestate = this.newLocal(Type.getType(Object.class));
+        mv.visitVarInsn(ASTORE, tracestate);
+
+        // inject headers
+        // load 2nd variable because the 1st is the method being instrumented
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitLdcInsn("traceparent");
+        mv.visitVarInsn(ALOAD, traceparent);
+        mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "addHeader",
+            "(Ljava/lang/String;Ljava/lang/String;)V", true);
+
+        if (isW3CBackportEnabled) {
             mv.visitVarInsn(ALOAD, 2);
             mv.visitLdcInsn("Request-Id");
             mv.visitVarInsn(ALOAD, childIdLocal);
-            mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "addHeader", "(Ljava/lang/String;Ljava/lang/String;)V", true);
-
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitLdcInsn("Correlation-Context");
-            mv.visitVarInsn(ALOAD, correlationContextLocal);
-            mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "addHeader", "(Ljava/lang/String;Ljava/lang/String;)V", true);
-
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitLdcInsn("Request-Context");
-            mv.visitVarInsn(ALOAD, appCorrelationId);
-            mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "addHeader", "(Ljava/lang/String;Ljava/lang/String;)V", true);
-        } else {
-            // If W3C is enabled, we propagate Traceparent, Tracecontext headers
-            // to enable correlation. Please refer to generateChildDependencyTraceparent(), generateChildDependencyTraceparent()
-            // from TraceContextCorrelation class on how to generate this headers.
-
-            // generate child Traceparent
-            mv.visitMethodInsn(INVOKESTATIC, "com/microsoft/applicationinsights/web/internal/correlation/TraceContextCorrelation",
-                "generateChildDependencyTraceparent", "()Ljava/lang/String;", false);
-            traceparent = this.newLocal(Type.getType(Object.class));
-            mv.visitVarInsn(ASTORE, traceparent);
-
-            mv.visitVarInsn(ALOAD, traceparent);
-            mv.visitMethodInsn(INVOKESTATIC, "com/microsoft/applicationinsights/web/internal/correlation/TraceContextCorrelation",
-                "createChildIdFromTraceparentString", "(Ljava/lang/String;)Ljava/lang/String;", false);
-            childIdLocal = this.newLocal(Type.getType(Object.class));
-            mv.visitVarInsn(ASTORE, childIdLocal);
-
-            // retrieve tracestate
-            mv.visitMethodInsn(INVOKESTATIC, "com/microsoft/applicationinsights/web/internal/correlation/TraceContextCorrelation",
-                "retriveTracestate", "()Ljava/lang/String;", false);
-            tracestate = this.newLocal(Type.getType(Object.class));
-            mv.visitVarInsn(ASTORE, tracestate);
-
-            // inject headers
-            // load 2nd variable because the 1st is the method being instrumented
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitLdcInsn("traceparent");
-            mv.visitVarInsn(ALOAD, traceparent);
-            mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "addHeader", "(Ljava/lang/String;Ljava/lang/String;)V", true);
-
-            if (isW3CBackportEnabled) {
-                mv.visitVarInsn(ALOAD, 2);
-                mv.visitLdcInsn("Request-Id");
-                mv.visitVarInsn(ALOAD, childIdLocal);
-                mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "addHeader", "(Ljava/lang/String;Ljava/lang/String;)V", true);
-            }
-
-            mv.visitVarInsn(ALOAD, tracestate);
-            Label nullLabel = new Label();
-            mv.visitJumpInsn(IFNULL, nullLabel);
-
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitLdcInsn("tracestate");
-            mv.visitVarInsn(ALOAD, tracestate);
-
-            mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "addHeader", "(Ljava/lang/String;Ljava/lang/String;)V", true);
-
-            // skip adding tracestate
-            mv.visitLabel(nullLabel);
+            mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "addHeader",
+                "(Ljava/lang/String;Ljava/lang/String;)V", true);
         }
 
+        mv.visitVarInsn(ALOAD, tracestate);
+        Label nullLabel = new Label();
+        mv.visitJumpInsn(IFNULL, nullLabel);
 
         mv.visitVarInsn(ALOAD, 2);
-        mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "getRequestLine", "()Lorg/apache/http/RequestLine;", true);
-		int requestLineLocal = this.newLocal(Type.getType(Object.class));
-		mv.visitVarInsn(ASTORE, requestLineLocal);
+        mv.visitLdcInsn("tracestate");
+        mv.visitVarInsn(ALOAD, tracestate);
+
+        mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "addHeader",
+            "(Ljava/lang/String;Ljava/lang/String;)V", true);
+
+        // skip adding tracestate
+        mv.visitLabel(nullLabel);
+
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "getRequestLine",
+            "()Lorg/apache/http/RequestLine;", true);
+        int requestLineLocal = this.newLocal(Type.getType(Object.class));
+        mv.visitVarInsn(ASTORE, requestLineLocal);
 
         //Load RequestLine instance into Local Array. It contains method name and URI as string which is extracted from it
         mv.visitVarInsn(ALOAD, requestLineLocal);
-        mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/RequestLine", "getUri", "()Ljava/lang/String;", true);
+        mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/RequestLine", "getUri",
+            "()Ljava/lang/String;", true);
         uriLocal = this.newLocal(Type.getType(Object.class));
         mv.visitVarInsn(ASTORE, uriLocal);
 
         //Get Method Name from RequestLine interface object
         mv.visitVarInsn(ALOAD, requestLineLocal);
-        mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/RequestLine", "getMethod", "()Ljava/lang/String;", true);
+        mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/RequestLine", "getMethod",
+            "()Ljava/lang/String;", true);
         methodLocal = this.newLocal(Type.getType(Object.class));
         mv.visitVarInsn(ASTORE, methodLocal);
-
     }
 
     protected TempVar duplicateTopStackToTempVariable(Type typeOfTopElementInStack) {

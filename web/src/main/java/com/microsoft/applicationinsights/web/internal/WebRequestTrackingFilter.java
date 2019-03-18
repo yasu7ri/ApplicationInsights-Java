@@ -34,8 +34,12 @@ import com.microsoft.applicationinsights.web.extensibility.initializers.WebAppNa
 import com.microsoft.applicationinsights.web.internal.httputils.AIHttpServletListener;
 import com.microsoft.applicationinsights.web.internal.httputils.ApplicationInsightsServletExtractor;
 import com.microsoft.applicationinsights.web.internal.httputils.HttpServerHandler;
+import io.opencensus.trace.Span;
+import io.opencensus.trace.Tracer;
+import io.opencensus.trace.Tracing;
+import io.opencensus.trace.propagation.TextFormat;
+import javax.annotation.Nullable;
 import javax.servlet.AsyncContext;
-import javax.servlet.DispatcherType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -79,6 +83,17 @@ public final class WebRequestTrackingFilter implements Filter {
 
     private WebModulesContainer<HttpServletRequest, HttpServletResponse> webModulesContainer;
     private TelemetryClient telemetryClient;
+    private final Tracer Tracer = Tracing.getTracer();
+    private final TextFormat TextFormat = Tracing.getPropagationComponent().getTraceContextFormat();
+
+    private final TextFormat.Getter<HttpServletRequest> contextGetter = new TextFormat.Getter<HttpServletRequest>() {
+        @Nullable
+        @Override
+        public String get(HttpServletRequest carrier, String key) {
+            return carrier.getHeader(key);
+        }
+    };
+
     private String key;
     private boolean agentIsUp = false;
     private final List<ThreadLocalCleaner> cleaners = new LinkedList<ThreadLocalCleaner>();
@@ -123,8 +138,8 @@ public final class WebRequestTrackingFilter implements Filter {
             }
 
             setKeyOnTLS(key);
-            RequestTelemetryContext requestTelemetryContext = handler.handleStart(httpRequest, httpResponse);
-            AIHttpServletListener aiHttpServletListener = new AIHttpServletListener(handler, requestTelemetryContext);
+            Span span = handler.handleStart(httpRequest, httpResponse);
+            AIHttpServletListener aiHttpServletListener = new AIHttpServletListener(handler, span);
             try {
                 httpRequest.setAttribute(ALREADY_FILTERED, Boolean.TRUE);
                 chain.doFilter(httpRequest, httpResponse);
@@ -136,7 +151,7 @@ public final class WebRequestTrackingFilter implements Filter {
                     AsyncContext context = httpRequest.getAsyncContext();
                     context.addListener(aiHttpServletListener, httpRequest, httpResponse);
                 } else {
-                    handler.handleEnd(httpRequest, httpResponse, requestTelemetryContext);
+                    handler.handleEnd(httpRequest, httpResponse, null,span);
                 }
                 setKeyOnTLS(null);
             }
@@ -170,8 +185,14 @@ public final class WebRequestTrackingFilter implements Filter {
             webModulesContainer = new WebModulesContainer<>(configuration);
             // Todo: Should we provide this via dependency injection? Can there be a scenario where user
             // can provide his own handler?
-            handler = new HttpServerHandler<>(new ApplicationInsightsServletExtractor(), webModulesContainer,
-                                                cleaners, telemetryClient);
+            handler = new HttpServerHandler<>(
+                Tracer,
+                new ApplicationInsightsServletExtractor(),
+                TextFormat,
+                contextGetter,
+                webModulesContainer,
+                cleaners,
+                telemetryClient);
             if (StringUtils.isNotEmpty(config.getFilterName())) {
                 this.filterName = config.getFilterName();
             }

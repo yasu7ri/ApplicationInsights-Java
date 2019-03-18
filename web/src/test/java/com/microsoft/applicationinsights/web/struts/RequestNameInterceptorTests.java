@@ -31,7 +31,6 @@ import org.mockito.stubbing.Answer;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
 import com.microsoft.applicationinsights.internal.util.DateTimeUtils;
 import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 import com.opensymphony.xwork2.ActionContext;
 import com.opensymphony.xwork2.ActionInvocation;
 
@@ -43,7 +42,7 @@ import static org.mockito.Mockito.when;
  */
 public class RequestNameInterceptorTests {
 
-    private static final String HTTP_METHOD = "GET";
+/*    private static final String HTTP_METHOD = "GET";
     private static final String ACTION_NAME = "TestAction";
     private static final String REQUEST_NAME = String.format("%s /%s", HTTP_METHOD, ACTION_NAME);
 
@@ -90,5 +89,5 @@ public class RequestNameInterceptorTests {
         ActionContext.setContext(actionContext);
 
         interceptor.intercept(actionInvocation);
-    }
+    }*/
 }

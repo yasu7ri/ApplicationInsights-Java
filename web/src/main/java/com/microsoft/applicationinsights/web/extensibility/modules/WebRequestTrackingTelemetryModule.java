@@ -26,9 +26,12 @@ import com.microsoft.applicationinsights.TelemetryConfiguration;
 import com.microsoft.applicationinsights.extensibility.TelemetryModule;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
+import com.microsoft.applicationinsights.web.internal.HttpRequestContext;
 import com.microsoft.applicationinsights.web.internal.correlation.TelemetryCorrelationUtils;
 import com.microsoft.applicationinsights.web.internal.correlation.TraceContextCorrelation;
+import io.opencensus.trace.Span;
+import io.opencensus.trace.Tracer;
+import io.opencensus.trace.Tracing;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -41,7 +44,10 @@ public class WebRequestTrackingTelemetryModule
 
     // region Members
 
+    private final static Tracer TRACER = Tracing.getTracer();
+
     private TelemetryClient telemetryClient;
+    private String instrumentationKey;
     private boolean isInitialized = false;
 
     public boolean isW3CEnabled = false;
@@ -57,19 +63,16 @@ public class WebRequestTrackingTelemetryModule
      */
     private final String W3C_BACKCOMPAT_PARAMETER = "enableW3CBackCompat";
 
-    /**
-     * The {@link RequestTelemetryContext} instance propogated from
-     * {@link com.microsoft.applicationinsights.web.internal.httputils.HttpServerHandler}
-     */
-    private RequestTelemetryContext requestTelemetryContext;
+
+    private HttpRequestContext requestTelemetryContext;
 
     public void setRequestTelemetryContext(
-        RequestTelemetryContext requestTelemetryContext) {
+        HttpRequestContext requestTelemetryContext) {
         this.requestTelemetryContext = requestTelemetryContext;
     }
 
     /** Used for test */
-    RequestTelemetryContext getRequestTelemetryContext() {
+    HttpRequestContext getRequestTelemetryContext() {
         return this.requestTelemetryContext;
     }
 
@@ -97,8 +100,6 @@ public class WebRequestTrackingTelemetryModule
             ));
             TraceContextCorrelation.setIsW3CBackCompatEnabled(enableBackCompatibilityForW3C);
         }
-
-
     }
 
     /**
@@ -123,17 +124,9 @@ public class WebRequestTrackingTelemetryModule
         }
 
         try {
-            //RequestTelemetryContext context = ThreadContext.getRequestTelemetryContext();
-            RequestTelemetry telemetry = this.requestTelemetryContext.getHttpRequestTelemetry();
-
+           Span span = TRACER.getCurrentSpan();
             // Look for cross-component correlation headers and resolve correlation ID's
-            if (isW3CEnabled) {
-                TraceContextCorrelation.resolveCorrelation(req, res, telemetry);
-            } else {
-                // Default correlation experience
-                TelemetryCorrelationUtils.resolveCorrelation(req, res, telemetry);
-            }
-
+            TraceContextCorrelation.legacyCorrelation(req, res, span, instrumentationKey);
         } catch (Exception e) {
             String moduleClassName = this.getClass().getSimpleName();
             InternalLogger.INSTANCE.error("Telemetry module %s onBeginRequest failed with exception: %s", moduleClassName, e.toString());
@@ -152,23 +145,6 @@ public class WebRequestTrackingTelemetryModule
             // has been logged.
             return;
         }
-
-        try {
-            //RequestTelemetryContext context = ThreadContext.getRequestTelemetryContext();
-            RequestTelemetry telemetry = this.requestTelemetryContext.getHttpRequestTelemetry();
-
-            String instrumentationKey = this.telemetryClient.getContext().getInstrumentationKey();
-            if (isW3CEnabled) {
-                TraceContextCorrelation.resolveRequestSource(req, telemetry, instrumentationKey);
-            } else {
-                TelemetryCorrelationUtils.resolveRequestSource(req, telemetry, instrumentationKey);
-            }
-
-            telemetryClient.track(telemetry);
-        } catch (Exception e) {
-            String moduleClassName = this.getClass().getSimpleName();
-            InternalLogger.INSTANCE.error("Telemetry module %s onEndRequest failed with exception: %s", moduleClassName, e.toString());
-        }
     }
 
     /**
@@ -179,6 +155,7 @@ public class WebRequestTrackingTelemetryModule
     public void initialize(TelemetryConfiguration configuration) {
         try {
             telemetryClient = new TelemetryClient(configuration);
+            instrumentationKey = configuration.getInstrumentationKey();
             isInitialized = true;
         } catch (Exception e) {
             InternalLogger.INSTANCE.error("Failed to initialize telemetry module %s. Exception: %s.", this.getClass().getSimpleName(), e.toString());

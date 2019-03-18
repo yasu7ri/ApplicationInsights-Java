@@ -26,7 +26,12 @@ import com.microsoft.applicationinsights.extensibility.TelemetryModule;
 import com.microsoft.applicationinsights.internal.util.LocalStringsUtils;
 import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
 import com.microsoft.applicationinsights.web.extensibility.modules.WebTelemetryModule;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
+import com.microsoft.applicationinsights.web.internal.HttpRequestContext;
+import io.opencensus.trace.AttributeValue;
+import io.opencensus.trace.Span;
+import io.opencensus.trace.Tracer;
+import io.opencensus.trace.Tracing;
+import java.text.AttributedString;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -40,20 +45,20 @@ import javax.servlet.http.HttpServletResponse;
 public class WebRequestRunIdTelemetryModule implements WebTelemetryModule<HttpServletRequest, HttpServletResponse>, TelemetryModule {
 
     protected static final String RUN_ID_QUERY_PARAM_NAME = "runid";
-
+    private final static Tracer TRACER = Tracing.getTracer();
     /**
-     * The {@link RequestTelemetryContext} instance propogated from
+     * The {@link HttpRequestContext} instance propogated from
      * {@link com.microsoft.applicationinsights.web.internal.httputils.HttpServerHandler}
      */
-    private RequestTelemetryContext requestTelemetryContext;
+    private HttpRequestContext requestTelemetryContext;
 
     public void setRequestTelemetryContext(
-        RequestTelemetryContext requestTelemetryContext) {
+        HttpRequestContext requestTelemetryContext) {
         this.requestTelemetryContext = requestTelemetryContext;
     }
 
     /** Used for test */
-    RequestTelemetryContext getRequestTelemetryContext() {
+    HttpRequestContext getRequestTelemetryContext() {
         return this.requestTelemetryContext;
     }
 
@@ -71,8 +76,9 @@ public class WebRequestRunIdTelemetryModule implements WebTelemetryModule<HttpSe
             return;
         }
 
-        RequestTelemetry httpRequestTelemetry = this.requestTelemetryContext.getHttpRequestTelemetry();
-        httpRequestTelemetry.getProperties().put(RUN_ID_QUERY_PARAM_NAME, runId);
+        Span span = TRACER.getCurrentSpan();
+        if (span != null)
+            span.putAttribute(RUN_ID_QUERY_PARAM_NAME, AttributeValue.stringAttributeValue(runId));
     }
 
     private String getRunIdFromQueryString(String queryString) {

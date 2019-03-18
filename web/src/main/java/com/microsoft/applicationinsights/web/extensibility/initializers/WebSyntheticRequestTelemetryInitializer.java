@@ -21,12 +21,12 @@
 
 package com.microsoft.applicationinsights.web.extensibility.initializers;
 
+import com.microsoft.applicationinsights.web.internal.HttpRequestContext;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.servlet.http.HttpServletRequest;
 
 import com.microsoft.applicationinsights.telemetry.Telemetry;
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
 
 import com.microsoft.applicationinsights.common.CommonUtils;
@@ -46,7 +46,7 @@ public class WebSyntheticRequestTelemetryInitializer extends WebTelemetryInitial
 
     @Override
     protected void onInitializeTelemetry(Telemetry telemetry) {
-        RequestTelemetryContext telemetryContext = ThreadContext.getRequestTelemetryContext();
+        HttpRequestContext telemetryContext = ThreadContext.getRequestTelemetryContext();
 
         if (telemetryContext == null) {
             return;

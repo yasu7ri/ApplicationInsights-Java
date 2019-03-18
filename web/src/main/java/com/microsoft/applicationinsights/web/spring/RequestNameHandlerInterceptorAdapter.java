@@ -21,10 +21,10 @@
 
 package com.microsoft.applicationinsights.web.spring;
 
+import com.microsoft.applicationinsights.web.internal.HttpRequestContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 import com.microsoft.applicationinsights.web.internal.ThreadContext;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
@@ -51,7 +51,7 @@ public class RequestNameHandlerInterceptorAdapter extends HandlerInterceptorAdap
                              Object handler) throws Exception {
 
         try {
-            RequestTelemetryContext context = ThreadContext.getRequestTelemetryContext();
+            HttpRequestContext context = ThreadContext.getRequestTelemetryContext();
 
             if (context == null) {
                 return true;
@@ -63,7 +63,7 @@ public class RequestNameHandlerInterceptorAdapter extends HandlerInterceptorAdap
                 return true;
             }
 
-            context.getHttpRequestTelemetry().setName(requestName);
+            context.OperationName = requestName;
         } catch (Exception e) {
             InternalLogger.INSTANCE.error(
                 "Failed to invoke interceptor '%s' with exception: %s.",

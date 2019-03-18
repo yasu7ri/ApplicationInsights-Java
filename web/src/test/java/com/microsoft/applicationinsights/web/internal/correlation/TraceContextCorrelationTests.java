@@ -15,7 +15,7 @@ import org.junit.Test;
 
 public class TraceContextCorrelationTests {
 
-    private static MockProfileFetcher mockProfileFetcher;
+/*    private static MockProfileFetcher mockProfileFetcher;
 
     @Before
     public void testInitialize() {
@@ -251,6 +251,6 @@ public class TraceContextCorrelationTests {
 
     private String formatedID(String id) {
         return "|" + id + ".";
-    }
+    }*/
 
 }

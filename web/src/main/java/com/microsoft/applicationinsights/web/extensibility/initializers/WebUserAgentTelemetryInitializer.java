@@ -37,9 +37,7 @@ public class WebUserAgentTelemetryInitializer extends WebTelemetryInitializerBas
      */
     @Override
     protected void onInitializeTelemetry(Telemetry telemetry) {
-        RequestTelemetry requestTelemetry = ThreadContext.getRequestTelemetryContext().getHttpRequestTelemetry();
-
-        String userAgent = requestTelemetry.getContext().getUser().getUserAgent();
+        String userAgent =  ThreadContext.getRequestTelemetryContext().UserAgent;
         telemetry.getContext().getUser().setUserAgent(userAgent);
     }
 }

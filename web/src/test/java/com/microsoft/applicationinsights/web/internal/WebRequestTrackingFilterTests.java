@@ -53,7 +53,7 @@ import static org.mockito.Mockito.*;
  */
 public class WebRequestTrackingFilterTests {
 
-    private String mockContextPath = "/FakeContext";
+/*    private String mockContextPath = "/FakeContext";
 
     private static class FilterAndTelemetryClientMock {
         public final Filter filter;
@@ -251,5 +251,5 @@ public class WebRequestTrackingFilterTests {
         field.setAccessible(true);
         return new FilterAndTelemetryClientMock(filter, (TelemetryClient) field.get(filter), null);
     }
-    // endregion Private methods
+    // endregion Private methods*/
 }
