@@ -61,6 +61,11 @@ import static org.junit.Assert.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AiSmokeTest {
 
+	public static final String PROPERTY_ENABLE_APACHE_LOG_HTTP = "ai.smoketest.apache.log.http";
+	public static final String PROPERTY_ENABLE_APACHE_LOG_WIRE = "ai.smoketest.apache.log.wire";
+	public static final String PROPERTY_ENABLE_APACHE_LOG_CONN = "ai.smoketest.apache.log.conn";
+	public static final String PROPERTY_ENABLE_APACHE_LOG_CLIENT = "ai.smoketest.apache.log.client";
+
 	//region: parameterization
 	@Parameters(name = "{index}: {0}, {1}, {2}")
 	public static Collection<Object[]> parameterGenerator() throws IOException {
@@ -544,6 +549,11 @@ public abstract class AiSmokeTest {
 			map.put(varname, containerName);
 			System.out.printf("Adding env var to test app container: %s=%s%n", varname, containerName);
 		}
+		map.put("APACHE_LOG_HTTP", System.getProperty(PROPERTY_ENABLE_APACHE_LOG_HTTP));
+		map.put("APACHE_LOG_WIRE", System.getProperty(PROPERTY_ENABLE_APACHE_LOG_WIRE));
+		map.put("APACHE_LOG_CONN", System.getProperty(PROPERTY_ENABLE_APACHE_LOG_CONN));
+		map.put("APACHE_LOG_CLIENT", System.getProperty(PROPERTY_ENABLE_APACHE_LOG_CLIENT));
+
 		return map;
 	}
 	//endregion
