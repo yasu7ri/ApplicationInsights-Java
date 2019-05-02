@@ -24,6 +24,7 @@
 import org.gradle.internal.os.OperatingSystem;
 import org.gradle.api.tasks.testing.logging.TestLogEvent;
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat;
+import org.apache.tools.ant.taskdefs.condition.Os;
 
 apply plugin: 'java'
 apply plugin: 'jacoco'
@@ -36,7 +37,7 @@ tasks.withType(JavaCompile) {
 }
 
 checkstyle {
-    toolVersion = '8.15'
+    toolVersion = '8.20'
     configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
     configProperties["rootDir"] = rootDir
 }
