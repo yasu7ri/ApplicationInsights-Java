@@ -33,7 +33,9 @@ shadowJar {
 }
 
 def collectdLibDir = System.env.'COLLECTD_HOME'
+println "collectdLibDir = $collectdLibDir"
 def collectDLibPath = new File(collectdLibDir, "lib/collectd-api.jar")
+println "collectDLibPath = $collectDLibPath"
 
 if (!collectDLibPath.exists()) {
     throw new ProjectConfigurationException("Archive $collectDLibPath required for building CollectD plugin could not be found.", null)
