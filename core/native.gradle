@@ -34,7 +34,12 @@ import org.apache.commons.io.FilenameUtils
 
 def javaIncludeDir = new File(System.env.'JAVA_HOME', "include")
 def programFilesX86 = System.env.'ProgramFiles(x86)'
-def referenceAssembliesDir = new File("$programFilesX86\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v4.5")
+def refAssembliesPath = "$programFilesX86\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v4.5"
+if (System.env.APPINSIGHTS_DOTNET_FMK_PATH) {
+    refAssembliesPath = System.env.APPINSIGHTS_DOTNET_FMK_PATH
+    println "Using custom .NETFrameowrkPath: $refAssembliesPath"
+}
+def referenceAssembliesDir = new File(refAssembliesPath)
 
 def winSdkDir = "C:\\Program Files (x86)\\Windows Kits\\8.1"
 if (System.env.APPINSIGHTS_WIN_SDK_PATH) {
