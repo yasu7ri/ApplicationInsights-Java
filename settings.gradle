@@ -22,6 +22,7 @@
 
 include 'agent'
 include 'core'
+include 'opencensus'
 include 'logging:log4j1_2'
 include 'logging:log4j2'
 include 'logging:logback'
