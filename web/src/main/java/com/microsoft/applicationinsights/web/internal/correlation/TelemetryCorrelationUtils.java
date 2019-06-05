@@ -38,8 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public class TelemetryCorrelationUtils {
-
-    public static final String CORRELATION_HEADER_NAME = "Request-Id";
+	public static final String CORRELATION_HEADER_NAME = "Request-Id";
 	public static final String CORRELATION_CONTEXT_HEADER_NAME = "Correlation-Context";
 	public static final String REQUEST_CONTEXT_HEADER_NAME = "Request-Context";
 	public static final String REQUEST_CONTEXT_HEADER_APPID_KEY = "appId";
@@ -294,7 +293,7 @@ public class TelemetryCorrelationUtils {
 	 * Adds a response header for the Request-Context.
 	 * @param response The servlet's response.
 	 */
-	private static void addTargetAppIdForResponseHeader(HttpServletResponse response) {
+	public static void addTargetAppIdForResponseHeader(HttpServletResponse response) {
 		
 		if (response.containsHeader(REQUEST_CONTEXT_HEADER_NAME)) {
 			return;

@@ -86,16 +86,6 @@ public class WebOperationIdTelemetryInitializerTests {
     }
 
     @Test
-    public void testTelemetryInitializedWithOperationId() {
-        RequestTelemetryContext context = new RequestTelemetryContext(DateTimeUtils.getDateTimeNow().getTime());
-        ThreadContext.setRequestTelemetryContext(context);
-
-        OperationContext operationContext = createAndInitializeTelemetry();
-
-        Assert.assertEquals("Operation ID hasn't been set.", context.getHttpRequestTelemetry().getId(), operationContext.getId());
-    }
-
-    @Test
     public void testInitializerDoesNotOverrideCustomerOperationId() {
         String customerId = "CustomerID";
 

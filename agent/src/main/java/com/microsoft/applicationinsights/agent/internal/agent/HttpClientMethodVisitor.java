@@ -156,8 +156,8 @@ public final class HttpClientMethodVisitor extends AbstractHttpMethodVisitor {
 
         mv.visitVarInsn(ALOAD, 2);
         mv.visitMethodInsn(INVOKEINTERFACE, "org/apache/http/HttpRequest", "getRequestLine", "()Lorg/apache/http/RequestLine;", true);
-		int requestLineLocal = this.newLocal(Type.getType(Object.class));
-		mv.visitVarInsn(ASTORE, requestLineLocal);
+		    int requestLineLocal = this.newLocal(Type.getType(Object.class));
+		    mv.visitVarInsn(ASTORE, requestLineLocal);
 
         //Load RequestLine instance into Local Array. It contains method name and URI as string which is extracted from it
         mv.visitVarInsn(ALOAD, requestLineLocal);
@@ -232,7 +232,6 @@ public final class HttpClientMethodVisitor extends AbstractHttpMethodVisitor {
                         "generateChildDependencyTarget", "(Ljava/lang/String;)Ljava/lang/String;", false);
                     mv.visitVarInsn(ASTORE, targetLocal);
                 }
-
 
                 mv.visitFieldInsn(Opcodes.GETSTATIC, internalName, "INSTANCE", "L" + internalName + ";");
 

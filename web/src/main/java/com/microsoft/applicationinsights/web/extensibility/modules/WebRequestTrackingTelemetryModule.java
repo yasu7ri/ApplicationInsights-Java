@@ -26,9 +26,11 @@ import com.microsoft.applicationinsights.TelemetryConfiguration;
 import com.microsoft.applicationinsights.extensibility.TelemetryModule;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
+import com.microsoft.applicationinsights.web.extensibility.initializers.WebOperationIdTelemetryInitializer;
 import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
 import com.microsoft.applicationinsights.web.internal.correlation.TelemetryCorrelationUtils;
 import com.microsoft.applicationinsights.web.internal.correlation.TraceContextCorrelation;
+import io.opencensus.common.Scope;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -97,8 +99,6 @@ public class WebRequestTrackingTelemetryModule
             ));
             TraceContextCorrelation.setIsW3CBackCompatEnabled(enableBackCompatibilityForW3C);
         }
-
-
     }
 
     /**
@@ -128,7 +128,8 @@ public class WebRequestTrackingTelemetryModule
 
             // Look for cross-component correlation headers and resolve correlation ID's
             if (isW3CEnabled) {
-                TraceContextCorrelation.resolveCorrelation(req, res, telemetry);
+                Scope scope = TraceContextCorrelation.startRequestScope(req, res, telemetry);
+                this.requestTelemetryContext.setScope(scope);
             } else {
                 // Default correlation experience
                 TelemetryCorrelationUtils.resolveCorrelation(req, res, telemetry);
@@ -158,13 +159,13 @@ public class WebRequestTrackingTelemetryModule
             RequestTelemetry telemetry = this.requestTelemetryContext.getHttpRequestTelemetry();
 
             String instrumentationKey = this.telemetryClient.getContext().getInstrumentationKey();
-            if (isW3CEnabled) {
-                TraceContextCorrelation.resolveRequestSource(req, telemetry, instrumentationKey);
-            } else {
-                TelemetryCorrelationUtils.resolveRequestSource(req, telemetry, instrumentationKey);
-            }
-
+            TelemetryCorrelationUtils.resolveRequestSource(req, telemetry, instrumentationKey);
             telemetryClient.track(telemetry);
+
+            Scope scope = this.requestTelemetryContext.getScope();
+            if (scope !=  null) {
+                scope.close();
+            }
         } catch (Exception e) {
             String moduleClassName = this.getClass().getSimpleName();
             InternalLogger.INSTANCE.error("Telemetry module %s onEndRequest failed with exception: %s", moduleClassName, e.toString());

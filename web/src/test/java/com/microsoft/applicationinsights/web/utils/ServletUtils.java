@@ -45,6 +45,9 @@ import static org.mockito.Mockito.when;
  */
 public class ServletUtils {
 
+    public static String TRACEPARENT_HEADER_NAME = "traceparent";
+    public static String TRACESTATE_HEADER_NAME = "tracestate";
+
     private ServletUtils() {
     }
 
@@ -113,20 +116,20 @@ public class ServletUtils {
 
         // specifically for W3C
 
-        if (headers.get(TraceContextCorrelation.TRACESTATE_HEADER_NAME)!=null) {
-            when(request.getHeaders(TraceContextCorrelation.TRACESTATE_HEADER_NAME)).
-                thenReturn(Collections.enumeration(Arrays.asList(headers.get(TraceContextCorrelation.TRACESTATE_HEADER_NAME))));
+        if (headers.get(TRACESTATE_HEADER_NAME)!=null) {
+            when(request.getHeaders(TRACESTATE_HEADER_NAME)).
+                thenReturn(Collections.enumeration(Arrays.asList(headers.get(TRACESTATE_HEADER_NAME))));
         } else {
-            when(request.getHeaders(TraceContextCorrelation.TRACESTATE_HEADER_NAME)).
+            when(request.getHeaders(TRACESTATE_HEADER_NAME)).
                 thenReturn(Collections.enumeration(Collections.EMPTY_LIST));
         }
 
 
-        if (headers.get(TraceContextCorrelation.TRACEPARENT_HEADER_NAME) != null) {
-            when(request.getHeaders(TraceContextCorrelation.TRACEPARENT_HEADER_NAME)).
-                thenReturn(Collections.enumeration(Arrays.asList(headers.get(TraceContextCorrelation.TRACEPARENT_HEADER_NAME))));
+        if (headers.get(TRACEPARENT_HEADER_NAME) != null) {
+            when(request.getHeaders(TRACEPARENT_HEADER_NAME)).
+                thenReturn(Collections.enumeration(Arrays.asList(headers.get(TRACEPARENT_HEADER_NAME))));
         } else {
-            when(request.getHeaders(TraceContextCorrelation.TRACEPARENT_HEADER_NAME)).
+            when(request.getHeaders(TRACEPARENT_HEADER_NAME)).
                 thenReturn(Collections.enumeration(Collections.EMPTY_LIST));
         }
 

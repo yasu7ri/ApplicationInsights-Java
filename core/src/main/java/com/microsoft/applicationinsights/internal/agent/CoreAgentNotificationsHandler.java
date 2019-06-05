@@ -144,26 +144,28 @@ final class CoreAgentNotificationsHandler implements AgentNotificationsHandler {
     @Override
     public void httpMethodFinished(String identifier, String method, String correlationId, String uri, String target, int result, long deltaInNS)
 		throws URISyntaxException {
-        if (!LocalStringsUtils.isNullOrEmpty(uri) && (uri.startsWith("https://dc.services.visualstudio.com") || uri.startsWith("https://rt.services.visualstudio.com"))) {
+        if (!LocalStringsUtils.isNullOrEmpty(uri) && (
+            uri.startsWith("https://dc.services.visualstudio.com") || uri
+                .startsWith("https://rt.services.visualstudio.com"))) {
             return;
         }
         long deltaInMS = nanoToMilliseconds(deltaInNS);
         URI uriObject = convertUriStringToUrl(uri);
         String name = method + " " + getRelativePath(uriObject);
         if (target == null) {
-        	target = getTargetFromUri(uriObject);
-		}
+            target = getTargetFromUri(uriObject);
+        }
 
         RemoteDependencyTelemetry telemetry = new RemoteDependencyTelemetry(name, uri, new Duration(deltaInMS), (result < 400));
-		Date dependencyStartTime = new Date(System.currentTimeMillis() - deltaInMS);
-		telemetry.setTimestamp(dependencyStartTime);
+        Date dependencyStartTime = new Date(System.currentTimeMillis() - deltaInMS);
+        telemetry.setTimestamp(dependencyStartTime);
         telemetry.setId(correlationId);
         telemetry.setResultCode(Integer.toString(result));
         telemetry.setType("Http (tracked component)");
 
         // For Backward Compatibility
-		telemetry.getContext().getProperties().put("URI", uri);
-		telemetry.getContext().getProperties().put("Method", method);
+        telemetry.getContext().getProperties().put("URI", uri);
+        telemetry.getContext().getProperties().put("Method", method);
 
         if (target != null && !target.isEmpty()) {
             // AI correlation expects target to be of this format.
@@ -174,8 +176,10 @@ final class CoreAgentNotificationsHandler implements AgentNotificationsHandler {
                 telemetry.setTarget(telemetry.getTarget() + " | " + target);
             }
         }
-       
-        InternalLogger.INSTANCE.trace("'%s' sent an HTTP method: '%s', uri: '%s', duration=%s ms", identifier, method, uri, deltaInMS);
+
+        InternalLogger.INSTANCE
+            .trace("'%s' sent an HTTP method: '%s', uri: '%s', duration=%s ms", identifier, method,
+                uri, deltaInMS);
         telemetryClient.track(telemetry);
     }
 

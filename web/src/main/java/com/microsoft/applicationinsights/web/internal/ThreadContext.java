@@ -21,6 +21,8 @@
 
 package com.microsoft.applicationinsights.web.internal;
 
+import io.opencensus.common.Scope;
+
 /**
  * Created by yonisha on 2/16/2015.
  */
@@ -51,6 +53,13 @@ public class ThreadContext {
      * Remove the context from ThreadLocal
      */
     public static void remove() {
+        RequestTelemetryContext ctx = threadLocal.get();
+        if (ctx != null) {
+            Scope scope = ctx.getScope();
+            if (scope != null) {
+                scope.close();
+            }
+        }
         threadLocal.remove();
     }
 }

@@ -34,15 +34,17 @@ import com.microsoft.applicationinsights.web.internal.correlation.Instrumentatio
 import com.microsoft.applicationinsights.web.internal.correlation.ProfileFetcherResultTaskStatus;
 import com.microsoft.applicationinsights.web.internal.correlation.TelemetryCorrelationUtils;
 import com.microsoft.applicationinsights.web.internal.correlation.TelemetryCorrelationUtilsTests;
-import com.microsoft.applicationinsights.web.internal.correlation.TraceContextCorrelation;
-import com.microsoft.applicationinsights.web.internal.correlation.TraceContextCorrelationTests;
 import com.microsoft.applicationinsights.web.internal.correlation.mocks.MockProfileFetcher;
-import com.microsoft.applicationinsights.web.internal.correlation.tracecontext.Traceparent;
-import com.microsoft.applicationinsights.web.internal.httputils.HttpServerHandler;
 import com.microsoft.applicationinsights.web.utils.HttpHelper;
 import com.microsoft.applicationinsights.web.utils.JettyTestServer;
 import com.microsoft.applicationinsights.web.utils.MockTelemetryChannel;
 import com.microsoft.applicationinsights.web.utils.ServletUtils;
+import io.opencensus.common.Scope;
+import io.opencensus.trace.BlankSpan;
+import io.opencensus.trace.Span;
+import io.opencensus.trace.Tracing;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import org.apache.http.HttpStatus;
 import org.eclipse.jetty.http.HttpMethod;
 import org.junit.After;
@@ -51,11 +53,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
-import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
@@ -64,7 +62,6 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by yonisha on 2/2/2015.
@@ -244,12 +241,15 @@ public class WebRequestTrackingTelemetryModuleTests {
 
         //mock a servlet request with cross-component correlation headers
         Map<String, String> headers = new HashMap<>();
-        Traceparent tp = new Traceparent();
+        String traceId = "0123456789abcdef0123456789abcdef";
+        String parentSpanId = "0123456789abcdef";
 
-        headers.put(TraceContextCorrelation.TRACEPARENT_HEADER_NAME, tp.toString());
-        headers.put(TraceContextCorrelation.TRACESTATE_HEADER_NAME, TraceContextCorrelationTests.getTracestateHeaderValue("id1"));
+        headers.put(ServletUtils.TRACEPARENT_HEADER_NAME, "00-" + traceId + "-" + parentSpanId + "-00");
+        headers.put(ServletUtils.TRACESTATE_HEADER_NAME, "foo=1,bar=xyz");
+        headers.put(TelemetryCorrelationUtils.REQUEST_CONTEXT_HEADER_NAME, TelemetryCorrelationUtilsTests.getRequestContextHeaderValue("id1", null));
+
         HttpServletRequest request = ServletUtils.createServletRequestWithHeaders(headers);
-        HttpServletResponse response = (HttpServletResponse)ServletUtils.generateDummyServletResponse();
+        HttpServletResponse response = ServletUtils.generateDummyServletResponse();
 
         //configure mock appId fetcher to return different appId from what's on the request header
         mockProfileFetcher.setAppIdToReturn("id2");
@@ -257,27 +257,31 @@ public class WebRequestTrackingTelemetryModuleTests {
 
         //run
         defaultModule.onBeginRequest(request, response);
+        Assert.assertNotNull(Tracing.getTracer().getCurrentSpan());
 
         // verify ID's are set as expected in request telemetry
         RequestTelemetry requestTelemetry = defaultModule.getRequestTelemetryContext().getHttpRequestTelemetry();
         Assert.assertNotNull(requestTelemetry.getId());
         // spanIds are different
         String[] id = requestTelemetry.getId().split("[.]");
-        Assert.assertNotEquals(tp.getSpanId(), id[1]);
+        Assert.assertNotEquals(parentSpanId, id[1]);
         // traceIds are same
-        Assert.assertTrue(requestTelemetry.getId().startsWith(formatedID(tp.getTraceId())));
+        Assert.assertTrue(requestTelemetry.getId().startsWith("|" + traceId + "."));
 
         //validate operation context ID's
         OperationContext operation = requestTelemetry.getContext().getOperation();
-        Assert.assertEquals(tp.getTraceId(), operation.getId());
-        Assert.assertEquals(formatedID(tp.getTraceId() + "." + tp.getSpanId()), operation.getParentId());
-
+        Assert.assertEquals(traceId, operation.getId());
+        Assert.assertEquals("|" + traceId + "." + parentSpanId  + ".", operation.getParentId());
         //run onEnd
         defaultModule.onEndRequest(request, null);
 
         //validate source
         Assert.assertNotNull(requestTelemetry.getSource());
-        Assert.assertEquals(TraceContextCorrelationTests.getRequestSourceValue("id1"), requestTelemetry.getSource());
+        Assert.assertEquals(TelemetryCorrelationUtilsTests.getRequestSourceValue("id1" , null), requestTelemetry.getSource());
+
+        Assert.assertEquals(BlankSpan.INSTANCE, Tracing.getTracer().getCurrentSpan());
+        Assert.assertTrue(requestTelemetry.getProperties().containsKey("tracestate"));
+        Assert.assertEquals("foo=1,bar=xyz", requestTelemetry.getProperties().get("tracestate"));
 
     }
 
@@ -294,13 +298,12 @@ public class WebRequestTrackingTelemetryModuleTests {
 
         //mock a servlet request with cross-component correlation headers
         Map<String, String> headers = new HashMap<>();
-        Traceparent tp = new Traceparent();
 
-        String incomingId = "|" + tp.getTraceId() + ".bcec871c_1.";
+        String incomingId = "|0123456789abcdef0123456789abcdef.bcec871c_1.";
         headers.put(TelemetryCorrelationUtils.CORRELATION_HEADER_NAME, incomingId);
         headers.put(TelemetryCorrelationUtils.REQUEST_CONTEXT_HEADER_NAME, TelemetryCorrelationUtilsTests.getRequestContextHeaderValue("id1", null));
         HttpServletRequest request = ServletUtils.createServletRequestWithHeaders(headers);
-        HttpServletResponse response = (HttpServletResponse)ServletUtils.generateDummyServletResponse();
+        HttpServletResponse response = ServletUtils.generateDummyServletResponse();
 
         //configure mock appId fetcher to return different appId from what's on the request header
         mockProfileFetcher.setAppIdToReturn("id2");
@@ -313,11 +316,11 @@ public class WebRequestTrackingTelemetryModuleTests {
         RequestTelemetry requestTelemetry = defaultModule.getRequestTelemetryContext().getHttpRequestTelemetry();
         Assert.assertNotNull(requestTelemetry.getId());
 
-        Assert.assertTrue(requestTelemetry.getId().startsWith("|"+tp.getTraceId()));
+        Assert.assertTrue(requestTelemetry.getId().startsWith("|0123456789abcdef0123456789abcdef."));
 
         //validate operation context ID's
         OperationContext operation = requestTelemetry.getContext().getOperation();
-        Assert.assertEquals(tp.getTraceId(), operation.getId());
+        Assert.assertEquals("0123456789abcdef0123456789abcdef", operation.getId());
         Assert.assertEquals(incomingId, operation.getParentId());
 
         //run onEnd
@@ -325,9 +328,10 @@ public class WebRequestTrackingTelemetryModuleTests {
 
         //validate source
         Assert.assertNotNull(requestTelemetry.getSource());
-        Assert.assertEquals(TraceContextCorrelationTests.getRequestSourceValue("id1"), requestTelemetry.getSource());
+        Assert.assertEquals(TelemetryCorrelationUtilsTests.getRequestSourceValue("id1", null), requestTelemetry.getSource());
 
-        Assert.assertTrue(requestTelemetry.getContext().getProperties().containsKey("ai_legacyRootID"));
+        Assert.assertFalse(requestTelemetry.getContext().getProperties().containsKey("ai_legacyRootId"));
+        Assert.assertFalse(requestTelemetry.getProperties().containsKey("tracestate"));
     }
 
     @Test
@@ -362,11 +366,11 @@ public class WebRequestTrackingTelemetryModuleTests {
         Assert.assertNotNull(requestTelemetry.getId());
 
         //"guid" is invalid trace-id in W3C. A new Traceparent is created
-        Assert.assertFalse(requestTelemetry.getId().startsWith(incomingId.split("[.]")[0]));
+        Assert.assertFalse(requestTelemetry.getId().startsWith("|guid."));
 
         //validate operation context ID's
         OperationContext operation = requestTelemetry.getContext().getOperation();
-        Assert.assertNotEquals(incomingId.split("[.]")[0], operation.getId());
+        Assert.assertNotEquals("guid", operation.getId());
         Assert.assertEquals(incomingId, operation.getParentId());
 
         //run onEnd
@@ -374,11 +378,11 @@ public class WebRequestTrackingTelemetryModuleTests {
 
         //validate source
         Assert.assertNotNull(requestTelemetry.getSource());
-        Assert.assertEquals(TraceContextCorrelationTests.getRequestSourceValue("id1"), requestTelemetry.getSource());
+        Assert.assertEquals(TelemetryCorrelationUtilsTests.getRequestSourceValue("id1", null), requestTelemetry.getSource());
 
         // validate ai_legacyRootID is set
-        Assert.assertTrue(requestTelemetry.getContext().getProperties().containsKey("ai_legacyRootID"));
-        Assert.assertEquals(requestTelemetry.getContext().getProperties().get("ai_legacyRootID"),
+        Assert.assertTrue(requestTelemetry.getContext().getProperties().containsKey("ai_legacyRootId"));
+        Assert.assertEquals(requestTelemetry.getContext().getProperties().get("ai_legacyRootId"),
             "guid");
     }
 
@@ -425,11 +429,10 @@ public class WebRequestTrackingTelemetryModuleTests {
 
         //validate source
         Assert.assertNotNull(requestTelemetry.getSource());
-        Assert.assertEquals(TraceContextCorrelationTests.getRequestSourceValue("id1"), requestTelemetry.getSource());
+        Assert.assertEquals(TelemetryCorrelationUtilsTests.getRequestSourceValue("id1", null), requestTelemetry.getSource());
 
         // No ai_legacyRootID is set as request-id is empty
-        Assert.assertFalse(requestTelemetry.getContext().getProperties().containsKey("ai_legacyRootID"));
-
+        Assert.assertFalse(requestTelemetry.getContext().getProperties().containsKey("ai_legacyRootId"));
     }
 
     @Test
@@ -475,10 +478,10 @@ public class WebRequestTrackingTelemetryModuleTests {
 
         //validate source
         Assert.assertNotNull(requestTelemetry.getSource());
-        Assert.assertEquals(TraceContextCorrelationTests.getRequestSourceValue("id1"), requestTelemetry.getSource());
+        Assert.assertEquals(TelemetryCorrelationUtilsTests.getRequestSourceValue("id1", null), requestTelemetry.getSource());
 
         // No ai_legacyRootID is set as request-id is empty
-        Assert.assertFalse(requestTelemetry.getContext().getProperties().containsKey("ai_legacyRootID"));
+        Assert.assertFalse(requestTelemetry.getContext().getProperties().containsKey("ai_legacyRootId"));
 
     }
 
@@ -495,9 +498,8 @@ public class WebRequestTrackingTelemetryModuleTests {
 
         //mock a servlet request with cross-component correlation headers
         Map<String, String> headers = new HashMap<>();
-        Traceparent tp = new Traceparent();
 
-        String incomingId = "|" + tp.getTraceId() + ".bcec871c_1.";
+        String incomingId = "|0123456789abcdef0123456789abcdef.bcec871c_1.";
         headers.put(TelemetryCorrelationUtils.CORRELATION_HEADER_NAME, incomingId);
         headers.put(TelemetryCorrelationUtils.REQUEST_CONTEXT_HEADER_NAME, TelemetryCorrelationUtilsTests.getRequestContextHeaderValue("id1", null));
         HttpServletRequest request = ServletUtils.createServletRequestWithHeaders(headers);
@@ -515,25 +517,20 @@ public class WebRequestTrackingTelemetryModuleTests {
         Assert.assertNotNull(requestTelemetry.getId());
 
         // old headers are not captured
-        Assert.assertFalse(requestTelemetry.getId().startsWith("|"+tp.getTraceId()));
+        Assert.assertFalse(requestTelemetry.getId().startsWith("|0123456789abcdef0123456789abcdef."));
 
         //validate operation context ID's
         OperationContext operation = requestTelemetry.getContext().getOperation();
-        Assert.assertNotEquals(tp.getTraceId(), operation.getId());
+        Assert.assertNotEquals("0123456789abcdef0123456789abcdef", operation.getId());
         Assert.assertNotEquals(incomingId, operation.getParentId());
 
         //run onEnd
         defaultModule.onEndRequest(request, null);
 
-        //old request-context headers are not checked
-        Assert.assertNull(requestTelemetry.getSource());
+        //request-context headers are checked
+        Assert.assertEquals(TelemetryCorrelationUtilsTests.getRequestSourceValue("id1", null), requestTelemetry.getSource());
 
-        Assert.assertFalse(requestTelemetry.getContext().getProperties().containsKey("ai_legacyRootID"));
-    }
-
-
-    private String formatedID(String id) {
-        return "|" + id + ".";
+        Assert.assertFalse(requestTelemetry.getContext().getProperties().containsKey("ai_legacyRootId"));
     }
 
     @Test
@@ -591,10 +588,12 @@ public class WebRequestTrackingTelemetryModuleTests {
         //mock a servlet request with cross-component correlation headers
         Map<String, String> headers = new HashMap<>();
 
-        Traceparent tp = new Traceparent();
+        String traceId = "0123456789abcdef0123456789abcdef";
+        String parentSpanId = "0123456789abcdef";
 
-        headers.put(TraceContextCorrelation.TRACEPARENT_HEADER_NAME, tp.toString());
-        headers.put(TraceContextCorrelation.TRACESTATE_HEADER_NAME, TraceContextCorrelationTests.getTracestateHeaderValue("id1"));
+        headers.put(ServletUtils.TRACEPARENT_HEADER_NAME, "00-" + traceId + "-" + parentSpanId + "-00");
+        headers.put(ServletUtils.TRACESTATE_HEADER_NAME, "foo=1,bar=xyz");
+
         HttpServletRequest request = ServletUtils.createServletRequestWithHeaders(headers);
         HttpServletResponse response = ServletUtils.generateDummyServletResponse();
 
@@ -616,32 +615,34 @@ public class WebRequestTrackingTelemetryModuleTests {
         RequestTelemetry requestTelemetry = defaultModule.getRequestTelemetryContext().getHttpRequestTelemetry();
 
         //validate manually tracked telemetry is a child of the request telemetry
-        Assert.assertEquals(tp.getTraceId(), exceptionTelemetry.getContext().getOperation().getId());
+        Assert.assertEquals(traceId, exceptionTelemetry.getContext().getOperation().getId());
         Assert.assertEquals(requestTelemetry.getId(), exceptionTelemetry.getContext().getOperation().getParentId());
 
-        Assert.assertNotNull(defaultModule.getRequestTelemetryContext().getTracestate());
-        Assert.assertEquals(TraceContextCorrelationTests.getTracestateHeaderValue("id2"),
-            ThreadContext.getRequestTelemetryContext().getTracestate().toString());
+        defaultModule.onEndRequest(request, response);
 
+        Assert.assertEquals(BlankSpan.INSTANCE, Tracing.getTracer().getCurrentSpan());
+        Assert.assertFalse(exceptionTelemetry.getProperties().containsKey("tracestate"));
+        Assert.assertTrue(requestTelemetry.getProperties().containsKey("tracestate"));
+        Assert.assertEquals("foo=1,bar=xyz", requestTelemetry.getProperties().get("tracestate"));
     }
 
     @Test
-    public void testTracestateIsSetWhenHeaderIsEmpty() {
+    public void testTracestateIsEmptyWhenHeaderIsNotPresent() {
         //turn on W3C
         defaultModule.isW3CEnabled = true;
 
         //setup: initialize a request context
         RequestTelemetryContext context = new RequestTelemetryContext(DateTimeUtils.getDateTimeNow().getTime());
-        defaultModule.setRequestTelemetryContext(context);
         ThreadContext.setRequestTelemetryContext(context);
+        defaultModule.setRequestTelemetryContext(context);
 
         //mock a servlet request with cross-component correlation headers
         Map<String, String> headers = new HashMap<>();
 
-        Traceparent tp = new Traceparent();
+        String traceId = "0123456789abcdef0123456789abcdef";
+        String parentSpanId = "0123456789abcdef";
 
-        headers.put(TraceContextCorrelation.TRACEPARENT_HEADER_NAME, tp.toString());
-        headers.put(TraceContextCorrelation.TRACESTATE_HEADER_NAME, "");
+        headers.put(ServletUtils.TRACEPARENT_HEADER_NAME, "00-" + traceId + "-" + parentSpanId + "00");
         HttpServletRequest request = ServletUtils.createServletRequestWithHeaders(headers);
         HttpServletResponse response = ServletUtils.generateDummyServletResponse();
 
@@ -649,108 +650,15 @@ public class WebRequestTrackingTelemetryModuleTests {
         mockProfileFetcher.setAppIdToReturn("id2");
         mockProfileFetcher.setResultStatus(ProfileFetcherResultTaskStatus.COMPLETE);
 
-        //run
-        defaultModule.onBeginRequest(request, response);
-
-        Assert.assertNotNull(defaultModule.getRequestTelemetryContext().getTracestate());
-        Assert.assertEquals(TraceContextCorrelationTests.getTracestateHeaderValue("id2"),
-            ThreadContext.getRequestTelemetryContext().getTracestate().toString());
-    }
-
-    @Test
-    public void testNewTracestateIsCreatedWhenHeaderIsNotPresent() {
-        //turn on W3C
-        defaultModule.isW3CEnabled = true;
-
-        //setup: initialize a request context
-        RequestTelemetryContext context = new RequestTelemetryContext(DateTimeUtils.getDateTimeNow().getTime());
-        ThreadContext.setRequestTelemetryContext(context);
-        defaultModule.setRequestTelemetryContext(context);
-
-        //mock a servlet request with cross-component correlation headers
-        Map<String, String> headers = new HashMap<>();
-
-        Traceparent tp = new Traceparent();
-
-        headers.put(TraceContextCorrelation.TRACEPARENT_HEADER_NAME, tp.toString());
-        HttpServletRequest request = ServletUtils.createServletRequestWithHeaders(headers);
-        HttpServletResponse response = (HttpServletResponse)ServletUtils.generateDummyServletResponse();
-
-        //configure mock appId fetcher to return different appId from what's on the request header
-        mockProfileFetcher.setAppIdToReturn("id2");
-        mockProfileFetcher.setResultStatus(ProfileFetcherResultTaskStatus.COMPLETE);
+        RequestTelemetry requestTelemetry = defaultModule.getRequestTelemetryContext().getHttpRequestTelemetry();
 
         //run
         defaultModule.onBeginRequest(request, response);
+        defaultModule.onEndRequest(request, response);
 
-        Assert.assertNotNull(defaultModule.getRequestTelemetryContext().getTracestate());
-        Assert.assertEquals(TraceContextCorrelationTests.getTracestateHeaderValue("id2"),
-            ThreadContext.getRequestTelemetryContext().getTracestate().toString());
+        Assert.assertFalse(requestTelemetry.getProperties().containsKey("tracestate"));
     }
 
-    @Test
-    public void testTracestateIsPassedAsItIsWhenAppIdResolutionIsPending() {
-        //turn on W3C
-        defaultModule.isW3CEnabled = true;
-
-        //setup: initialize a request context
-        RequestTelemetryContext context = new RequestTelemetryContext(DateTimeUtils.getDateTimeNow().getTime());
-        ThreadContext.setRequestTelemetryContext(context);
-        defaultModule.setRequestTelemetryContext(context);
-
-        //mock a servlet request with cross-component correlation headers
-        Map<String, String> headers = new HashMap<>();
-
-        Traceparent tp = new Traceparent();
-
-        headers.put(TraceContextCorrelation.TRACEPARENT_HEADER_NAME, tp.toString());
-        headers.put(TraceContextCorrelation.TRACESTATE_HEADER_NAME, TraceContextCorrelationTests.getTracestateHeaderValue("id1"));
-        HttpServletRequest request = ServletUtils.createServletRequestWithHeaders(headers);
-        HttpServletResponse response = ServletUtils.generateDummyServletResponse();
-
-        //configure mock appId fetcher to return different appId from what's on the request header
-        mockProfileFetcher.setAppIdToReturn("id2");
-        mockProfileFetcher.setResultStatus(ProfileFetcherResultTaskStatus.PENDING);
-
-        //run
-        defaultModule.onBeginRequest(request, response);
-
-        Assert.assertNotNull(defaultModule.getRequestTelemetryContext().getTracestate());
-        Assert.assertEquals(TraceContextCorrelationTests.getTracestateHeaderValue("id1"),
-            ThreadContext.getRequestTelemetryContext().getTracestate().toString());
-    }
-
-    @Test
-    public void testTracestateIsPassedAsIsWhenAppIdResolutionIsFailed() {
-        //turn on W3C
-        defaultModule.isW3CEnabled = true;
-
-        //setup: initialize a request context
-        RequestTelemetryContext context = new RequestTelemetryContext(DateTimeUtils.getDateTimeNow().getTime());
-        ThreadContext.setRequestTelemetryContext(context);
-        defaultModule.setRequestTelemetryContext(context);
-
-        //mock a servlet request with cross-component correlation headers
-        Map<String, String> headers = new HashMap<>();
-
-        Traceparent tp = new Traceparent();
-
-        headers.put(TraceContextCorrelation.TRACEPARENT_HEADER_NAME, tp.toString());
-        headers.put(TraceContextCorrelation.TRACESTATE_HEADER_NAME, TraceContextCorrelationTests.getTracestateHeaderValue("id1"));
-        HttpServletRequest request = ServletUtils.createServletRequestWithHeaders(headers);
-        HttpServletResponse response = ServletUtils.generateDummyServletResponse();
-
-        //configure mock appId fetcher to return different appId from what's on the request header
-        mockProfileFetcher.setAppIdToReturn("id2");
-        mockProfileFetcher.setResultStatus(ProfileFetcherResultTaskStatus.FAILED);
-
-        //run
-        defaultModule.onBeginRequest(request, response);
-
-        Assert.assertNotNull(defaultModule.getRequestTelemetryContext().getTracestate());
-        Assert.assertEquals(TraceContextCorrelationTests.getTracestateHeaderValue("id1"),
-            ThreadContext.getRequestTelemetryContext().getTracestate().toString());
-    }
 
     @Test
     public void testOnEndAddsSourceFieldForRequestWithRequestContext() {
@@ -916,37 +824,6 @@ public class WebRequestTrackingTelemetryModuleTests {
     }
 
     @Test
-    public void testOnEndDoesNotOverrideSourceFieldWhenW3CEnabled() {
-
-        // Enable W3C
-        defaultModule.isW3CEnabled = true;
-
-        //setup: initialize a request telemetry context
-        RequestTelemetryContext context = new RequestTelemetryContext(DateTimeUtils.getDateTimeNow().getTime());
-        defaultModule.setRequestTelemetryContext(context);
-        ThreadContext.setRequestTelemetryContext(context);
-        RequestTelemetry requestTelemetry = ThreadContext.getRequestTelemetryContext().getHttpRequestTelemetry();
-        requestTelemetry.setSource("myAppId");
-
-        //mock a servlet request with cross-component correlation headers
-        Map<String, String> headers = new HashMap<String, String>();
-        headers.put(TraceContextCorrelation.TRACESTATE_HEADER_NAME, TraceContextCorrelationTests.getTracestateHeaderValue("id1"));
-        HttpServletRequest request = ServletUtils.createServletRequestWithHeaders(headers);
-        HttpServletResponse response = ServletUtils.generateDummyServletResponse();
-
-        //configure mock appId fetcher to return different appId from what's on the request header
-        mockProfileFetcher.setAppIdToReturn("id2");
-        mockProfileFetcher.setResultStatus(ProfileFetcherResultTaskStatus.COMPLETE);
-
-        //run
-        defaultModule.onBeginRequest(request, response);
-        defaultModule.onEndRequest(request, null);
-
-        //validate source
-        Assert.assertEquals("myAppId", requestTelemetry.getSource());
-    }
-
-    @Test
     public void testInstrumentationKeyIsResolvedDuringModuleInit() {
         Assert.assertEquals(0, mockProfileFetcher.callCount());
         String ikey = TelemetryConfiguration.getActive().getInstrumentationKey();
@@ -1036,6 +913,108 @@ public class WebRequestTrackingTelemetryModuleTests {
         Assert.assertEquals("cid-v1:id1", requestTelemetry3.getSource());
     }
 
+    @Test
+    public void testTelemetryCreatedAsyncWithinRequestScopeIsAnOrphan() {
+        // Turn W3C on
+        defaultModule.isW3CEnabled = true;
+
+        //setup: initialize a request context
+        RequestTelemetryContext context = new RequestTelemetryContext(DateTimeUtils.getDateTimeNow().getTime());
+        defaultModule.setRequestTelemetryContext(context);
+        ThreadContext.setRequestTelemetryContext(context);
+
+        //mock a servlet request with cross-component correlation headers
+        Map<String, String> headers = new HashMap<String, String>();
+        HttpServletRequest request = ServletUtils.createServletRequestWithHeaders(headers, 1);
+        HttpServletResponse response = ServletUtils.generateDummyServletResponse();
+
+        //run module
+        defaultModule.onBeginRequest(request, response);
+
+        final TelemetryClient telemetryClient = new TelemetryClient();
+
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(new Supplier<String>() {
+            @Override
+            public String get() {
+
+                // ThreadLocal is gone
+                Assert.assertEquals(BlankSpan.INSTANCE, Tracing.getTracer().getCurrentSpan());
+                // clear ThreadContext - it is done with InheritableThreadLocal and not reliable
+                ThreadContext.remove();
+
+                telemetryClient.trackException(new Exception());
+                return "hello!";
+            }
+        });
+
+        try {
+            future.get();
+        } catch (Exception e) {
+        }
+
+        List<ExceptionTelemetry> items = channel.getTelemetryItems(ExceptionTelemetry.class);
+        Assert.assertEquals(1, items.size());
+        ExceptionTelemetry exceptionTelemetry = items.get(0);
+
+        RequestTelemetry requestTelemetry = defaultModule.getRequestTelemetryContext().getHttpRequestTelemetry();
+
+        //validate manually tracked telemetry is a child of the request telemetry
+        Assert.assertNull(exceptionTelemetry.getContext().getOperation().getId());
+        Assert.assertNull(exceptionTelemetry.getContext().getOperation().getParentId());
+    }
+
+    @Test
+    public void testTelemetryCreatedAsyncWithinRequestScopeWithManualPropagationIsChild() {
+        // Turn W3C on
+        defaultModule.isW3CEnabled = true;
+
+        //setup: initialize a request context
+        RequestTelemetryContext context = new RequestTelemetryContext(DateTimeUtils.getDateTimeNow().getTime());
+        defaultModule.setRequestTelemetryContext(context);
+        ThreadContext.setRequestTelemetryContext(context);
+
+        //mock a servlet request with cross-component correlation headers
+        Map<String, String> headers = new HashMap<String, String>();
+        HttpServletRequest request = ServletUtils.createServletRequestWithHeaders(headers, 1);
+        HttpServletResponse response = ServletUtils.generateDummyServletResponse();
+
+        //run module
+        defaultModule.onBeginRequest(request, response);
+
+        final TelemetryClient telemetryClient = new TelemetryClient();
+
+        final Span span = Tracing.getTracer().getCurrentSpan();
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(new Supplier<String>() {
+            @Override
+            public String get() {
+
+                // ThreadLocal is gone
+                Assert.assertEquals(BlankSpan.INSTANCE, Tracing.getTracer().getCurrentSpan());
+                // clear ThreadContext - it is done with InheritableThreadLocal and not reliable
+                ThreadContext.remove();
+
+                try (Scope _ = Tracing.getTracer().withSpan(span)) {
+                    telemetryClient.trackException(new Exception());
+                    return "hello!";
+                }
+            }
+        });
+
+        try {
+            future.get();
+        } catch (Exception e) {
+        }
+
+        List<ExceptionTelemetry> items = channel.getTelemetryItems(ExceptionTelemetry.class);
+        Assert.assertEquals(1, items.size());
+        ExceptionTelemetry exceptionTelemetry = items.get(0);
+
+        RequestTelemetry requestTelemetry = defaultModule.getRequestTelemetryContext().getHttpRequestTelemetry();
+
+        //validate manually tracked telemetry is a child of the request telemetry
+        Assert.assertEquals(requestTelemetry.getContext().getOperation().getId(), exceptionTelemetry.getContext().getOperation().getId());
+        Assert.assertEquals(requestTelemetry.getId(), exceptionTelemetry.getContext().getOperation().getParentId());
+    }
     // endregion Tests
 
     // region Private methods

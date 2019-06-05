@@ -23,6 +23,7 @@ package com.microsoft.applicationinsights.web.extensibility.initializers;
 
 import com.microsoft.applicationinsights.common.CommonUtils;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
+import com.microsoft.applicationinsights.opencensus.SpanContextTelemetryInitializer;
 import com.microsoft.applicationinsights.telemetry.RequestTelemetry;
 import com.microsoft.applicationinsights.telemetry.Telemetry;
 import com.microsoft.applicationinsights.web.internal.RequestTelemetryContext;
@@ -34,37 +35,38 @@ import java.util.Map;
  */
 public class WebOperationIdTelemetryInitializer extends WebTelemetryInitializerBase {
 
+    private final SpanContextTelemetryInitializer spanContextTelemetryInitializer = new SpanContextTelemetryInitializer();
+
     /**
      * Initializes the properties of the given telemetry.
      */
     @Override
     protected void onInitializeTelemetry(Telemetry telemetry) {
+        // WebOperationIdTelemetryInitializer should be deprecated going forward in favor of
+        // SpanContextTelemetryInitializer. Now, it should only be used when W3C and OpenCensus are disabled
+        // Here we proxy calls to SpanContextTelemetryInitializer and fall-back to Http RequestTelemetryContext
+        spanContextTelemetryInitializer.initialize(telemetry);
+
         RequestTelemetryContext telemetryContext = ThreadContext.getRequestTelemetryContext();
 
         if (telemetryContext == null) {
             InternalLogger.INSTANCE.error(
                 "Unexpected error. No telemetry context found. OperationContext will not be initialized.");
-                return;
-        }
-
-        RequestTelemetry requestTelemetry = telemetryContext.getHttpRequestTelemetry();
-        String currentOperationId = requestTelemetry.getContext().getOperation().getId();
-
-        // if there's no current operation (e.g. telemetry being initialized outside of 
-        // request scope), just initialize operationId to the generic id currently in request
-        if (currentOperationId == null || currentOperationId.isEmpty()) {
-            telemetry.getContext().getOperation().setId(requestTelemetry.getId());
             return;
         }
 
-        // set operationId to the request telemetry's operation ID
         if (CommonUtils.isNullOrEmpty(telemetry.getContext().getOperation().getId())) {
-            telemetry.getContext().getOperation().setId(currentOperationId);
-        }
 
-        // set operation parentId to the request telemetry's ID
-        if (CommonUtils.isNullOrEmpty(telemetry.getContext().getOperation().getParentId())) {
-            telemetry.getContext().getOperation().setParentId(requestTelemetry.getId());
+            RequestTelemetry requestTelemetry = telemetryContext.getHttpRequestTelemetry();
+            String currentOperationId = requestTelemetry.getContext().getOperation().getId();
+
+            // set operationId to the request telemetry's operation ID
+            telemetry.getContext().getOperation().setId(currentOperationId);
+
+            // set operation parentId to the request telemetry's ID
+            if (CommonUtils.isNullOrEmpty(telemetry.getContext().getOperation().getParentId())) {
+                telemetry.getContext().getOperation().setParentId(requestTelemetry.getId());
+            }
         }
 
         // add correlation context to properties

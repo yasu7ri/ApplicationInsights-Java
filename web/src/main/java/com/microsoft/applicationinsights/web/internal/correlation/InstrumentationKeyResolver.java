@@ -51,11 +51,11 @@ public enum InstrumentationKeyResolver {
      * @return The applicationId associated with the instrumentation key or null if it cannot be retrieved.
      */
     public String resolveInstrumentationKey(String instrumentationKey) {
-        
-    	 if (instrumentationKey == null || instrumentationKey.isEmpty()) {
-             throw new IllegalArgumentException("instrumentationKey must be not null or empty");
-         }
-    	
+
+        if (instrumentationKey == null || instrumentationKey.isEmpty()) {
+            throw new IllegalArgumentException("instrumentationKey must be not null or empty");
+        }
+
         try {
             String appId = this.appIdCache.get(instrumentationKey);
 
@@ -65,16 +65,19 @@ public enum InstrumentationKeyResolver {
 
             ProfileFetcherResult result = this.profileFetcher.fetchAppProfile(instrumentationKey);
             appId = processResult(result, instrumentationKey);
-            
+
             if (appId != null) {
-            	this.appIdCache.putIfAbsent(instrumentationKey, appId);
+                this.appIdCache.putIfAbsent(instrumentationKey, appId);
             }
-            
+
             return appId;
-		} catch (Exception e) {
-            InternalLogger.INSTANCE.error("InstrumentationKeyResolver - failed to resolve instrumentation key: %s => Exception: %s", instrumentationKey, e);
-            InternalLogger.INSTANCE.trace("Stack trace generated is %s", ExceptionUtils.getStackTrace(e));
-		}
+        } catch (Exception e) {
+            InternalLogger.INSTANCE.error(
+                "InstrumentationKeyResolver - failed to resolve instrumentation key: %s => Exception: %s",
+                instrumentationKey, e);
+            InternalLogger.INSTANCE
+                .trace("Stack trace generated is %s", ExceptionUtils.getStackTrace(e));
+        }
 
         return null;
     }
