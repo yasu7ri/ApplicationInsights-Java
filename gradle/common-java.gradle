@@ -96,7 +96,7 @@ if (hasProperty("JDKToUse")) {
 }
 updateTestDirectories()
 
-// setting this variable is highly recommended
+// setting this variable is no longer recommended!!!
 def java7JreDir = System.env.'JAVA_JRE_7'
 def isJava7 = JavaVersion.current().isJava7()
 def isJava7Compatible = JavaVersion.current().isJava7Compatible()
