@@ -57,6 +57,8 @@ public final class TelemetryConfiguration {
 
     private boolean trackingIsDisabled = false;
 
+    private final EndpointConfiguration endpoints = new EndpointConfiguration();
+
     /**
      * Gets the active {@link com.microsoft.applicationinsights.TelemetryConfiguration} instance loaded from the
      * ApplicationInsights.xml file. If the configuration file does not exist, the active configuration instance is
@@ -225,5 +227,9 @@ public final class TelemetryConfiguration {
      */
     private static void setActiveAsNull() {
         active = null;
+    }
+
+    public EndpointConfiguration getEndpoints() {
+        return endpoints;
     }
 }
