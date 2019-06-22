@@ -21,6 +21,7 @@
 
 package com.microsoft.applicationinsights.web.internal.correlation;
 
+import com.microsoft.applicationinsights.EndpointConfiguration;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import com.microsoft.applicationinsights.internal.shutdown.SDKShutdownActivity;
 import com.microsoft.applicationinsights.internal.util.PeriodicTaskPool;
@@ -46,8 +47,8 @@ public class CdsProfileFetcher implements AppProfileFetcher {
 
     private CloseableHttpAsyncClient httpClient;
     private String endpointAddress;
-    private static final String ProfileQueryEndpointAppIdFormat = "%s/api/profiles/%s/appId";
-    private static final String DefaultProfileQueryEndpointAddress = "https://dc.services.visualstudio.com";
+    private static final String ProfileQueryEndpointAppIdFormat = EndpointConfiguration.DEFAULT_PROFILE_QUERY_ENDPOINT_URI_PATH_FORMAT;
+    private static final String DefaultProfileQueryEndpointAddress = EndpointConfiguration.DEFAULT_TELEMETRY_ENDPOINT_HOST_URL;
 
     // cache of tasks per ikey
     /* Visible for Testing */ final ConcurrentMap<String, Future<HttpResponse>> tasks;
@@ -163,7 +164,7 @@ public class CdsProfileFetcher implements AppProfileFetcher {
     }
 
     private Future<HttpResponse> createFetchTask(String instrumentationKey) {
-        HttpGet request = new HttpGet(String.format(ProfileQueryEndpointAppIdFormat, this.endpointAddress, instrumentationKey));
+		HttpGet request = new HttpGet(this.endpointAddress + String.format(ProfileQueryEndpointAppIdFormat, instrumentationKey));
         return this.httpClient.execute(request, null);
     }
 

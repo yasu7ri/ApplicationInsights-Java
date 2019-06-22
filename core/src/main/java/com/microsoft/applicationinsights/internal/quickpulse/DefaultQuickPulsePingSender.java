@@ -24,6 +24,7 @@ package com.microsoft.applicationinsights.internal.quickpulse;
 import java.io.IOException;
 import java.util.Date;
 
+import com.microsoft.applicationinsights.EndpointConfiguration;
 import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -36,7 +37,7 @@ import com.microsoft.applicationinsights.internal.channel.common.ApacheSender;
  * Created by gupele on 12/12/2016.
  */
 final class DefaultQuickPulsePingSender implements QuickPulsePingSender {
-    private final static String QP_BASE_URI = "https://rt.services.visualstudio.com/QuickPulseService.svc/";
+    private final static String QP_BASE_URI = EndpointConfiguration.DEFAULT_QUICKPULSE_ENDPOINT;
 
     private final String quickPulsePingUri;
     private final ApacheSender apacheSender;
@@ -49,7 +50,7 @@ final class DefaultQuickPulsePingSender implements QuickPulsePingSender {
         this.apacheSender = apacheSender;
 
         final String ikey = TelemetryConfiguration.getActive().getInstrumentationKey();
-        quickPulsePingUri = QP_BASE_URI + "ping?ikey=" + ikey;
+        quickPulsePingUri = QP_BASE_URI + "/ping?ikey=" + ikey;
 
         final StrBuilder sb = new StrBuilder();
         sb.append("{");

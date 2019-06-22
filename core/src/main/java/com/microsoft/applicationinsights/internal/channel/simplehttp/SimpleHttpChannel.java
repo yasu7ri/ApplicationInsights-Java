@@ -26,6 +26,7 @@ import java.io.StringWriter;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import com.microsoft.applicationinsights.EndpointConfiguration;
 import com.microsoft.applicationinsights.channel.TelemetryChannel;
 import com.microsoft.applicationinsights.channel.TelemetrySampler;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
@@ -45,7 +46,7 @@ import org.apache.http.impl.client.HttpClients;
  */
 final class SimpleHttpChannel implements TelemetryChannel
 {
-    private final static String DEFAULT_SERVER_URI = "https://dc.services.visualstudio.com/v2/track";
+    private final static String DEFAULT_SERVER_URI = EndpointConfiguration.DEFAULT_TELEMETRY_ENDPOINT;
 
     @Override
     public boolean isDeveloperMode()

@@ -23,6 +23,7 @@ package com.microsoft.applicationinsights.internal.channel.common;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.microsoft.applicationinsights.EndpointConfiguration;
 import com.microsoft.applicationinsights.internal.channel.TransmissionDispatcher;
 import com.microsoft.applicationinsights.internal.channel.TransmissionHandlerArgs;
 import com.microsoft.applicationinsights.internal.channel.TransmissionOutput;
@@ -55,7 +56,7 @@ public final class TransmissionNetworkOutput implements TransmissionOutput {
     private final static String CONTENT_ENCODING_HEADER = "Content-Encoding";
     private final static String RESPONSE_THROTTLING_HEADER = "Retry-After";
 
-    public final static String DEFAULT_SERVER_URI = "https://dc.services.visualstudio.com/v2/track";
+    public final static String DEFAULT_SERVER_URI = EndpointConfiguration.DEFAULT_TELEMETRY_ENDPOINT;
 
     // For future use: re-send a failed transmission back to the dispatcher
     private TransmissionDispatcher transmissionDispatcher;
