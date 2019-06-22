@@ -105,7 +105,15 @@ public class ChannelXmlElement {
         this.flushIntervalInSeconds = flushIntervalInSeconds;
     }
 
+    /**
+     * @deprecated Not a boolean, use getMaxTransmissionStorageFilesCapacityInMB
+     */
+    @Deprecated
     public String isMaxTransmissionStorageFilesCapacityInMB() {
+        return getMaxTransmissionStorageFilesCapacityInMB();
+    }
+
+    public String getMaxTransmissionStorageFilesCapacityInMB() {
         return maxTransmissionStorageFilesCapacityInMB;
     }
 

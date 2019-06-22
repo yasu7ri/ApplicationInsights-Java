@@ -57,6 +57,7 @@ import com.microsoft.applicationinsights.internal.processor.TelemetryEventFilter
 import com.microsoft.applicationinsights.internal.processor.TraceTelemetryFilter;
 import com.microsoft.applicationinsights.internal.quickpulse.QuickPulse;
 import com.microsoft.applicationinsights.internal.util.LocalStringsUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
@@ -484,8 +485,13 @@ public enum TelemetryConfigurationFactory {
      */
     private boolean setChannel(ChannelXmlElement channelXmlElement, TelemetrySampler telemetrySampler, TelemetryConfiguration configuration) {
         String channelName = channelXmlElement.getType();
+        final Map<String, String> channelConfigData = channelXmlElement.getData();
+        if (StringUtils.isNotEmpty(channelXmlElement.getEndpointAddress())) {
+            InternalLogger.INSTANCE.warn("Overriding endpoint in configuration with deprecated XML element, Endpoint. See documentation for current supported configuration XML elements.");
+        }
+        channelConfigData.put("EndpointAddress", configuration.getEndpoints().getTelemetryEndpoint());
         if (channelName != null) {
-            TelemetryChannel channel = ReflectionUtils.createInstance(channelName, TelemetryChannel.class, Map.class, channelXmlElement.getData());
+            TelemetryChannel channel = ReflectionUtils.createInstance(channelName, TelemetryChannel.class, Map.class, channelConfigData);
             if (channel != null) {
                 channel.setSampler(telemetrySampler);
                 configuration.setChannel(channel);
@@ -500,7 +506,7 @@ public enum TelemetryConfigurationFactory {
 
         try {
             // We will create the default channel and we assume that the data is relevant.
-            TelemetryChannel channel = new InProcessTelemetryChannel(channelXmlElement.getData());
+            TelemetryChannel channel = new InProcessTelemetryChannel(channelConfigData);
             channel.setSampler(telemetrySampler);
             configuration.setChannel(channel);
             return true;
