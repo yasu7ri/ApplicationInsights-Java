@@ -40,15 +40,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class CdsProfileFetcher implements AppProfileFetcher {
 
+    private final EndpointConfiguration endpoints;
     private CloseableHttpAsyncClient httpClient;
-    private String endpointAddress;
-    private static final String ProfileQueryEndpointAppIdFormat = EndpointConfiguration.DEFAULT_PROFILE_QUERY_ENDPOINT_URI_PATH_FORMAT;
-    private static final String DefaultProfileQueryEndpointAddress = EndpointConfiguration.DEFAULT_TELEMETRY_ENDPOINT_HOST_URL;
 
     // cache of tasks per ikey
     /* Visible for Testing */ final ConcurrentMap<String, Future<HttpResponse>> tasks;
@@ -59,11 +56,16 @@ public class CdsProfileFetcher implements AppProfileFetcher {
     private final PeriodicTaskPool taskThreadPool;
     private final CdsRetryPolicy retryPolicy;
 
+    /**
+     * @deprecated Uses default endpoint. Should specify endpoint config.
+     */
+    @Deprecated
     public CdsProfileFetcher() {
-        this(new CdsRetryPolicy());
+        this(new EndpointConfiguration(), new CdsRetryPolicy());
     }
 
-    public CdsProfileFetcher(CdsRetryPolicy retryPolicy) {
+    public CdsProfileFetcher(EndpointConfiguration endpoints, CdsRetryPolicy retryPolicy) {
+        this.endpoints = endpoints;
         taskThreadPool = new PeriodicTaskPool(1, CdsProfileFetcher.class.getSimpleName());
         this.retryPolicy = retryPolicy;
 
@@ -84,7 +86,6 @@ public class CdsProfileFetcher implements AppProfileFetcher {
 
         this.tasks = new ConcurrentHashMap<>();
         this.failureCounters = new ConcurrentHashMap<>();
-        this.endpointAddress = DefaultProfileQueryEndpointAddress;
 
         taskThreadPool.executePeriodicRunnableTask(cdsRetryClearTask);
         this.httpClient.start();
@@ -155,16 +156,23 @@ public class CdsProfileFetcher implements AppProfileFetcher {
         this.httpClient = client;
     }
 
+    /**
+     *
+     * @param endpoint
+     * @throws MalformedURLException
+     * @deprecated set endpoint in configuration
+     */
+    @Deprecated
     public void setEndpointAddress(String endpoint) throws MalformedURLException {
         // set endpoint address to the base address (e.g. https://dc.services.visualstudio.com)
         // later we will append the profile/ikey segment
         URL url = new URL(endpoint);
         String urlStr = url.toString();
-        this.endpointAddress = urlStr.substring(0, urlStr.length() - url.getFile().length());
+        endpoints.setProfileQueryEndpointHostUrl(urlStr.substring(0, urlStr.length() - url.getFile().length()));
     }
 
     private Future<HttpResponse> createFetchTask(String instrumentationKey) {
-		HttpGet request = new HttpGet(this.endpointAddress + String.format(ProfileQueryEndpointAppIdFormat, instrumentationKey));
+		HttpGet request = new HttpGet(String.format(endpoints.getProfileQueryEndpointFormat(), instrumentationKey));
         return this.httpClient.execute(request, null);
     }
 

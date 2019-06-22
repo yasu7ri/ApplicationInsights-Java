@@ -21,21 +21,40 @@
 
 package com.microsoft.applicationinsights.web.internal.correlation;
 
+import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.ParseException;
 
 public enum InstrumentationKeyResolver {
     INSTANCE;
 
-    private static final String CorrelationIdFormat = "cid-v1:%s";
-    private AppProfileFetcher profileFetcher;
+	private static final String CorrelationIdFormat = "cid-v1:%s";
+    private volatile AppProfileFetcher profileFetcher;
     private final ConcurrentMap<String, String> appIdCache;
     
     InstrumentationKeyResolver() {
-        this.appIdCache = new ConcurrentHashMap<String, String>();
-        this.profileFetcher = new CdsProfileFetcher();
+    	this.appIdCache = new ConcurrentHashMap<String, String>();
+    	this.profileFetcher = new NopProfileFetcher();
+    }
+
+    private static class NopProfileFetcher implements AppProfileFetcher {
+
+        static final ProfileFetcherResult PROFILE_FETCHER_RESULT = new ProfileFetcherResult(null, ProfileFetcherResultTaskStatus.PENDING);
+
+        @Override
+        public ProfileFetcherResult fetchAppProfile(String instrumentationKey) throws InterruptedException, ExecutionException, ParseException, IOException {
+            return PROFILE_FETCHER_RESULT;
+        }
+
+        @Override
+        public void close() throws IOException {
+
+        }
     }
     
     public void clearCache() {
@@ -43,7 +62,12 @@ public enum InstrumentationKeyResolver {
     }
 
     public void setProfileFetcher(AppProfileFetcher profileFetcher) {
-        this.profileFetcher = profileFetcher;
+        if (profileFetcher == null) {
+            throw new NullPointerException();
+        }
+        synchronized (INSTANCE) {
+            this.profileFetcher = profileFetcher;
+        }
     }
 
     /**
@@ -55,7 +79,7 @@ public enum InstrumentationKeyResolver {
          if (instrumentationKey == null || instrumentationKey.isEmpty()) {
              throw new IllegalArgumentException("instrumentationKey must be not null or empty");
          }
-        
+
         try {
             String appId = this.appIdCache.get(instrumentationKey);
 
@@ -63,7 +87,11 @@ public enum InstrumentationKeyResolver {
                 return appId;
             }
 
-            ProfileFetcherResult result = this.profileFetcher.fetchAppProfile(instrumentationKey);
+            final AppProfileFetcher profileFetcher;
+            synchronized (INSTANCE) {
+                profileFetcher = this.profileFetcher;
+            }
+            ProfileFetcherResult result = profileFetcher.fetchAppProfile(instrumentationKey);
             appId = processResult(result, instrumentationKey);
             
             if (appId != null) {
