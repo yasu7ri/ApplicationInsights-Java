@@ -197,12 +197,12 @@ public class ApplicationInsightsTelemetryAutoConfiguration {
     @Bean
     @ConditionalOnProperty(value = "azure.application-insights.quick-pulse.enabled", havingValue = "true", matchIfMissing = true)
     @DependsOn("telemetryConfiguration")
-    public QuickPulse quickPulse() {
+    public QuickPulse quickPulse(TelemetryConfiguration config) {
         String inProcessEndPoint = environment.getProperty("azure.application-insights.channel.local-forwarder.endpoint-address");
         if (StringUtils.isNotBlank(inProcessEndPoint)) {
           return QuickPulse.INSTANCE;
         }
-        QuickPulse.INSTANCE.initialize();
+        QuickPulse.INSTANCE.initialize(config);
         return QuickPulse.INSTANCE;
     }
 

@@ -46,6 +46,7 @@ final class DefaultQuickPulseDataFetcher implements QuickPulseDataFetcher {
     private String postPrefix;
     private final String sdkVersion;
 
+<<<<<<< HEAD
     public DefaultQuickPulseDataFetcher(ArrayBlockingQueue<HttpPost> sendQueue, TelemetryConfiguration config,
                                         String instanceName, String quickPulseId) {
         this(sendQueue, config, null, instanceName, quickPulseId);
@@ -59,6 +60,14 @@ final class DefaultQuickPulseDataFetcher implements QuickPulseDataFetcher {
     private DefaultQuickPulseDataFetcher(ArrayBlockingQueue<HttpPost> sendQueue, TelemetryConfiguration config,
                                         String ikey, String instanceName, String quickPulseId) {
         quickPulsePostUri = QP_BASE_URI + "/post?ikey=" + ikey;
+=======
+    @Deprecated
+    public DefaultQuickPulseDataFetcher(final ArrayBlockingQueue<HttpPost> sendQueue, final String ikey, final String instanceName, final String quickPulseId) {
+        this(sendQueue, ikey, instanceName, quickPulseId, new EndpointConfiguration());
+    }
+    public DefaultQuickPulseDataFetcher(final ArrayBlockingQueue<HttpPost> sendQueue, final String ikey, final String instanceName, final String quickPulseId, final EndpointConfiguration endpoints) {
+        quickPulsePostUri = endpoints.getQuickPulseEndpoint() + "/post?ikey=" + ikey;
+>>>>>>> updated quickPulse components to use endpoints from configuration.
         this.sendQueue = sendQueue;
         this.config = config;
         this.ikey = ikey;

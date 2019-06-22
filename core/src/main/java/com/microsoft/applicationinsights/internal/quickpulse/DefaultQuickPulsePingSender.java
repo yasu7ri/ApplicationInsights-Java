@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.Date;
 
 import com.microsoft.applicationinsights.EndpointConfiguration;
-import org.apache.commons.lang3.text.StrBuilder;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
@@ -37,7 +36,6 @@ import com.microsoft.applicationinsights.internal.channel.common.ApacheSender;
  * Created by gupele on 12/12/2016.
  */
 final class DefaultQuickPulsePingSender implements QuickPulsePingSender {
-    private final static String QP_BASE_URI = EndpointConfiguration.DEFAULT_QUICKPULSE_ENDPOINT;
 
     private final String quickPulsePingUri;
     private final ApacheSender apacheSender;
@@ -45,14 +43,21 @@ final class DefaultQuickPulsePingSender implements QuickPulsePingSender {
     private String pingPrefix;
     private long lastValidTransmission = 0;
 
-    public DefaultQuickPulsePingSender(final ApacheSender apacheSender, final String instanceName,
-            final String quickPulseId) {
+    /**
+     * @deprecated Instead, use {@link #DefaultQuickPulsePingSender(ApacheSender, String, String, String, EndpointConfiguration)} )}
+     */
+    @Deprecated
+    public DefaultQuickPulsePingSender(final ApacheSender apacheSender, final String instanceName, final String quickPulseId) {
+        this(apacheSender, instanceName, quickPulseId, TelemetryConfiguration.getActive().getInstrumentationKey(),
+                TelemetryConfiguration.getActive().getEndpoints());
+    }
+    public DefaultQuickPulsePingSender(final ApacheSender apacheSender, final String instanceName, final String quickPulseId,
+                                       String instrumentationKey, EndpointConfiguration endpoints) {
         this.apacheSender = apacheSender;
 
-        final String ikey = TelemetryConfiguration.getActive().getInstrumentationKey();
-        quickPulsePingUri = QP_BASE_URI + "/ping?ikey=" + ikey;
+        quickPulsePingUri = endpoints.getQuickPulseEndpoint() + "/ping?ikey=" + instrumentationKey;
 
-        final StrBuilder sb = new StrBuilder();
+        final StringBuilder sb = new StringBuilder();
         sb.append("{");
         sb.append("\"Documents\": null,");
         sb.append("\"Instance\":\"" + instanceName + "\",");
@@ -105,7 +110,7 @@ final class DefaultQuickPulsePingSender implements QuickPulsePingSender {
 
     private ByteArrayEntity buildPingEntity(long timeInMillis) {
 
-        StrBuilder sb = new StrBuilder(pingPrefix);
+        StringBuilder sb = new StringBuilder(pingPrefix);
         sb.append(timeInMillis);
         sb.append(")\\/\",");
         sb.append("\"Version\":\"2.2.0-738\"");

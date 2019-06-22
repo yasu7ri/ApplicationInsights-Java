@@ -52,6 +52,7 @@ public enum QuickPulse implements Stoppable {
     private ApacheSender apacheSender;
     private QuickPulseDataSender quickPulseDataSender;
 
+<<<<<<< HEAD
     // initialization is performed in the background because initializing the random seed (via UUID.randomUUID()) below
     // can cause slowness during startup in some environments
     public void initialize() {
@@ -76,7 +77,22 @@ public enum QuickPulse implements Stoppable {
         } else {
             synchronized (INSTANCE) {
                 latch.countDown();
+=======
+    @Deprecated
+    public void initialize() {
+        initialize(TelemetryConfiguration.getActive());
+    }
+
+    public void initialize(TelemetryConfiguration configuration) {
+        if (!initialized) {
+            synchronized (INSTANCE) {
+                if (!configuration.isQuickPulseEnabled()) {
+                    initialized = false;
+                    return;
+                }
+>>>>>>> updated quickPulse components to use endpoints from configuration.
                 if (!initialized) {
+                    InternalLogger.INSTANCE.trace("Initializing QuickPulse...");
                     initialized = true;
                     final String quickPulseId = UUID.randomUUID().toString().replace("-", "");
                     apacheSender = ApacheSenderFactory.INSTANCE.create();
@@ -89,10 +105,17 @@ public enum QuickPulse implements Stoppable {
                         instanceName = "Unknown host";
                     }
 
+<<<<<<< HEAD
                     final TelemetryConfiguration config = TelemetryConfiguration.getActive();
 
                     final QuickPulsePingSender quickPulsePingSender = new DefaultQuickPulsePingSender(apacheSender, instanceName, quickPulseId);
                     final QuickPulseDataFetcher quickPulseDataFetcher = new DefaultQuickPulseDataFetcher(sendQueue, config, instanceName, quickPulseId);
+=======
+                    final String ikey = configuration.getInstrumentationKey();
+
+                    final QuickPulsePingSender quickPulsePingSender = new DefaultQuickPulsePingSender(apacheSender, instanceName, quickPulseId, ikey, configuration.getEndpoints());
+                    final QuickPulseDataFetcher quickPulseDataFetcher = new DefaultQuickPulseDataFetcher(sendQueue, ikey, instanceName, quickPulseId, configuration.getEndpoints());
+>>>>>>> updated quickPulse components to use endpoints from configuration.
 
                     final QuickPulseCoordinatorInitData coordinatorInitData =
                             new QuickPulseCoordinatorInitDataBuilder()

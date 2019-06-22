@@ -56,6 +56,7 @@ public final class TelemetryConfiguration {
     private TelemetryChannel channel;
 
     private boolean trackingIsDisabled = false;
+    private boolean quickPulseEnabled = true;
 
     private final EndpointConfiguration endpoints = new EndpointConfiguration();
 
@@ -231,5 +232,13 @@ public final class TelemetryConfiguration {
 
     public EndpointConfiguration getEndpoints() {
         return endpoints;
+    }
+
+    public boolean isQuickPulseEnabled() {
+        return quickPulseEnabled;
+    }
+
+    public void setQuickPulseEnabled(boolean quickPulseEnabled) {
+        this.quickPulseEnabled = quickPulseEnabled;
     }
 }
