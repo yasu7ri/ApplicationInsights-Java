@@ -487,9 +487,10 @@ public enum TelemetryConfigurationFactory {
         String channelName = channelXmlElement.getType();
         final Map<String, String> channelConfigData = channelXmlElement.getData();
         if (StringUtils.isNotEmpty(channelXmlElement.getEndpointAddress())) {
-            InternalLogger.INSTANCE.warn("Overriding endpoint in configuration with deprecated XML element, Endpoint. See documentation for current supported configuration XML elements.");
+            InternalLogger.INSTANCE.warn("Overriding endpoint in configuration with deprecated XML element, EndpointAddress. Use the Endpoints XML element instead.");
+        } else {
+            channelConfigData.put("EndpointAddress", configuration.getEndpoints().getTelemetryEndpoint());
         }
-        channelConfigData.put("EndpointAddress", configuration.getEndpoints().getTelemetryEndpoint());
         if (channelName != null) {
             TelemetryChannel channel = ReflectionUtils.createInstance(channelName, TelemetryChannel.class, Map.class, channelConfigData);
             if (channel != null) {
