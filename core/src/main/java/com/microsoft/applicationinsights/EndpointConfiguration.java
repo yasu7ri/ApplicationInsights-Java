@@ -2,6 +2,9 @@ package com.microsoft.applicationinsights;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 public class EndpointConfiguration {
     public static final String DEFAULT_TELEMETRY_ENDPOINT_HOST_URL = "https://dc.services.visualstudio.com";
     public static final String DEFAULT_QUICKPULSE_ENDPOINT_HOST_URL = "https://rt.services.visualstudio.com";
@@ -39,6 +42,12 @@ public class EndpointConfiguration {
         }
         if (!(StringUtils.startsWith("http://", value) && StringUtils.startsWith("https://", value))) {
             throw new IllegalArgumentException(varName + "must start with http:// or https://");
+        }
+        try {
+            URL url = new URL(value);
+
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(varName+" is not a valid URL", e);
         }
     }
 
