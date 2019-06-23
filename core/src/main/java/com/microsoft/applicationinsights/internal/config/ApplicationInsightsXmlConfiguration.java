@@ -66,6 +66,9 @@ public class ApplicationInsightsXmlConfiguration {
     @XStreamAlias("QuickPulse")
     private QuickPulseXmlElement quickPulse;
 
+    @XStreamAlias("Endpoints")
+    private EndpointsXmlElement endpoints;
+
     @XStreamAsAttribute
     private String schemaVersion;
 
@@ -119,6 +122,14 @@ public class ApplicationInsightsXmlConfiguration {
 
     public ChannelXmlElement getChannel() {
         return channel;
+    }
+
+    public void setEndpoints(EndpointsXmlElement endpoints) {
+        this.endpoints = endpoints;
+    }
+
+    public EndpointsXmlElement getEndpoints() {
+        return this.endpoints;
     }
 
     public void setChannel(ChannelXmlElement channel) {
