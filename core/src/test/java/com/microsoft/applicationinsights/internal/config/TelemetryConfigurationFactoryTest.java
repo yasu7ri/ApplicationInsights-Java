@@ -47,6 +47,7 @@ import com.microsoft.applicationinsights.internal.processor.SyntheticSourceFilte
 import com.microsoft.applicationinsights.internal.reflect.ClassDataUtils;
 import com.microsoft.applicationinsights.internal.reflect.ClassDataVerifier;
 
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.hamcrest.Matchers;
 import org.junit.*;
 import org.mockito.Mockito;
@@ -382,7 +383,8 @@ public final class TelemetryConfigurationFactoryTest {
 
         initializeWithFactory(mockParser, mockConfiguration);
 
-        assertFalse(mockConfiguration.getChannel().isDeveloperMode());
+        // the URL should have failed with an exception (?) and therefore the default configuration would be used.
+        assertFalse("Developer mode should be false", mockConfiguration.getChannel().isDeveloperMode());
     }
 
     @Test
@@ -533,20 +535,14 @@ public final class TelemetryConfigurationFactoryTest {
 
 
     private void initializeWithFactory(AppInsightsConfigurationBuilder mockParser, TelemetryConfiguration mockConfiguration) {
-        Field field = null;
         try {
-            field = ClassDataUtils.class.getDeclaredField("verifier");
-            field.setAccessible(true);
-
             ClassDataVerifier mockVerifier = Mockito.mock(ClassDataVerifier.class);
             Mockito.doReturn(true).when(mockVerifier).verifyClassExists(anyString());
-            field.set(ClassDataUtils.INSTANCE, mockVerifier);
+            FieldUtils.writeField(ClassDataUtils.INSTANCE, "verifier", mockVerifier, true);
             TelemetryConfigurationFactory.INSTANCE.setBuilder(mockParser);
             TelemetryConfigurationFactory.INSTANCE.initialize(mockConfiguration);
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException();
         } catch (IllegalAccessException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 
