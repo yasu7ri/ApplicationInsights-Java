@@ -140,6 +140,9 @@ public enum TelemetryConfigurationFactory {
 >>>>>>> updated quickPulse components to use endpoints from configuration.
 
             TelemetrySampler telemetrySampler = getSampler(appInsightsXmlConfig.getSampler());
+
+            configureEndpoints(appInsightsXmlConfig.getEndpoints(), configuration);
+
             boolean channelIsConfigured = setChannel(appInsightsXmlConfig.getChannel(), telemetrySampler, configuration);
             if (!channelIsConfigured) {
                 InternalLogger.INSTANCE.warn("No channel was initialized. A channel must be set before telemetry tracking will operate correctly.");
@@ -161,6 +164,15 @@ public enum TelemetryConfigurationFactory {
             initializeComponents(configuration);
         } catch (Exception e) {
             InternalLogger.INSTANCE.error("Failed to initialize configuration, exception: %s", ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    private void configureEndpoints(EndpointsXmlElement endpoints, TelemetryConfiguration configuration) {
+        if (StringUtils.isNotEmpty(endpoints.getTelemetry())) {
+            configuration.getEndpoints().setTelemetryEndpoint(endpoints.getTelemetry());
+        }
+        if (StringUtils.isNotEmpty(endpoints.getQuickPulse())) {
+            configuration.getEndpoints().setQuickPulseEndpoint(endpoints.getQuickPulse());
         }
     }
 
@@ -486,7 +498,7 @@ public enum TelemetryConfigurationFactory {
     private boolean setChannel(ChannelXmlElement channelXmlElement, TelemetrySampler telemetrySampler, TelemetryConfiguration configuration) {
         String channelName = channelXmlElement.getType();
         final Map<String, String> channelConfigData = channelXmlElement.getData();
-        if (StringUtils.isNotEmpty(channelXmlElement.getEndpointAddress())) {
+        if (StringUtils.isNotEmpty(channelConfigData.get("EndpointAddress"))) {
             InternalLogger.INSTANCE.warn("Overriding endpoint in configuration with deprecated XML element, EndpointAddress. Use the Endpoints XML element instead.");
         } else {
             channelConfigData.put("EndpointAddress", configuration.getEndpoints().getTelemetryEndpoint());
