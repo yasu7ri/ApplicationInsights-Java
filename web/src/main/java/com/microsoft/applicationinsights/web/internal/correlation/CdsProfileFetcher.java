@@ -157,18 +157,17 @@ public class CdsProfileFetcher implements AppProfileFetcher {
     }
 
     /**
-     *
+     * set endpoint address to the base address (e.g. https://dc.services.visualstudio.com)
+     * later we will append the profile/ikey segment
      * @param endpoint
      * @throws MalformedURLException
-     * @deprecated set endpoint in configuration
+     * @deprecated use {@link EndpointConfiguration#setProfileQueryEndpointFormat(String)}
      */
     @Deprecated
     public void setEndpointAddress(String endpoint) throws MalformedURLException {
-        // set endpoint address to the base address (e.g. https://dc.services.visualstudio.com)
-        // later we will append the profile/ikey segment
         URL url = new URL(endpoint);
         String urlStr = url.toString();
-        endpoints.setProfileQueryEndpointHostUrl(urlStr.substring(0, urlStr.length() - url.getFile().length()));
+        endpoints.setProfileQueryEndpointFormat(urlStr.substring(0, urlStr.length() - url.getFile().length()) + EndpointConfiguration.DEFAULT_PROFILE_QUERY_ENDPOINT_URI_PATH_FORMAT);
     }
 
     private Future<HttpResponse> createFetchTask(String instrumentationKey) {
