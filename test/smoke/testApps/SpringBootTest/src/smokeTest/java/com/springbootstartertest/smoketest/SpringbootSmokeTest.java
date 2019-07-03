@@ -38,28 +38,6 @@ import static org.junit.Assert.assertTrue;
 public class SpringbootSmokeTest extends AiSmokeTest {
 
     @Test
-    @TargetUri("/basic/trackEvent")
-    public void trackEvent() {
-        assertEquals(1, mockedIngestion.getCountForType("RequestData"));
-        assertEquals(2, mockedIngestion.getCountForType("EventData"));
-
-        // TODO get event data envelope and verify value
-        EventData d = getTelemetryDataForType(0, "EventData");
-        final String name = "EventDataTest";
-        assertEquals(name, d.getName());
-
-        EventData d2 = getTelemetryDataForType(1, "EventData");
-
-        final String expectedName = "EventDataPropertyTest";
-        final String expectedProperties = "value";
-        final Double expectedMetric = 1d;
-
-        assertEquals(expectedName, d2.getName());
-        assertEquals(expectedProperties, d2.getProperties().get("key"));
-        assertEquals(expectedMetric, d2.getMeasurements().get("key"));
-    }
-
-    @Test
     @TargetUri("/throwsException")
     public void testResultCodeWhenRestControllerThrows() {
         assertEquals(1, mockedIngestion.getCountForType("RequestData"));
