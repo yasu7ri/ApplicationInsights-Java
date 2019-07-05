@@ -24,6 +24,7 @@ plugins {
 }
 
 apply from: "$buildScriptsDir/common-java.gradle"
+apply from: "$buildScriptsDir/publishing.gradle"
 
 def instrumentationVersion = '0.14.2'
 
@@ -132,3 +133,14 @@ dependencies {
     runtime "org.glowroot.instrumentation:instrumentation-log4j:$instrumentationVersion"
     runtime "org.glowroot.instrumentation:instrumentation-logback:$instrumentationVersion"
 }
+
+// region Publishing properties
+
+projectPomName = project.msftAppInsights + " Java Agent"
+projectPomDescription = "This is the Java agent of " + project.msftAppInsightsJavaSdk
+
+whenPomConfigured = { p ->
+    p.dependencies = []
+}
+
+// endregion Publishing properties
