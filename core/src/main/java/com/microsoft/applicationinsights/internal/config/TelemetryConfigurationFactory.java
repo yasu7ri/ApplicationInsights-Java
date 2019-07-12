@@ -21,7 +21,6 @@
 
 package com.microsoft.applicationinsights.internal.config;
 
-import com.microsoft.applicationinsights.channel.concrete.localforwarder.LocalForwarderTelemetryChannel;
 import com.microsoft.applicationinsights.internal.channel.samplingV2.FixedRateSamplingTelemetryProcessor;
 import com.microsoft.applicationinsights.internal.heartbeat.HeartBeatModule;
 import java.io.InputStream;
@@ -135,7 +134,7 @@ public enum TelemetryConfigurationFactory {
             setRoleName(applicationInsightsConfig, configuration);
 
             TelemetrySampler telemetrySampler = getSampler(applicationInsightsConfig.getSampler());
-            boolean channelIsConfigured = setChannel(applicationInsightsConfig.getChannel(), telemetrySampler, configuration);
+            boolean channelIsConfigured = setChannel(applicationInsightsConfig, telemetrySampler, configuration);
             if (!channelIsConfigured) {
                 InternalLogger.INSTANCE.warn("No channel was initialized. A channel must be set before telemetry tracking will operate correctly.");
             }
@@ -145,13 +144,6 @@ public enum TelemetryConfigurationFactory {
             setTelemetryInitializers(applicationInsightsConfig.getTelemetryInitializers(), configuration);
             setTelemetryModules(applicationInsightsConfig, configuration);
             setTelemetryProcessors(applicationInsightsConfig, configuration);
-
-            TelemetryChannel channel = configuration.getChannel();
-            if (channel instanceof LocalForwarderTelemetryChannel
-                && isQuickPulseEnabledInConfiguration(applicationInsightsConfig)) {
-                    InternalLogger.INSTANCE.info("LocalForwarder will handle QuickPulse communication. Disabling SDK QuickPulse thread.");
-                    applicationInsightsConfig.getQuickPulse().setEnabled(false);
-            }
             setQuickPulse(applicationInsightsConfig);
 
             initializeComponents(configuration);
@@ -159,6 +151,7 @@ public enum TelemetryConfigurationFactory {
             InternalLogger.INSTANCE.error("Failed to initialize configuration, exception: %s", ExceptionUtils.getStackTrace(e));
         }
     }
+
 
     private void setMinimumConfiguration(ApplicationInsightsXmlConfiguration userConfiguration, TelemetryConfiguration configuration) {
         setInstrumentationKey(userConfiguration, configuration);
@@ -486,18 +479,23 @@ public enum TelemetryConfigurationFactory {
 
     /**
      * Setting the channel.
-     * @param channelXmlElement The configuration element holding the channel data.
+     * @param xmlConfig The configuration element holding the channel data.
      * @param telemetrySampler The sampler that should be injected into the channel
      * @param configuration The configuration class.
      * @return True on success.
      */
-    private boolean setChannel(ChannelXmlElement channelXmlElement, TelemetrySampler telemetrySampler, TelemetryConfiguration configuration) {
+    private boolean setChannel(ApplicationInsightsXmlConfiguration xmlConfig, TelemetrySampler telemetrySampler, TelemetryConfiguration configuration) {
+        ChannelXmlElement channelXmlElement = xmlConfig.getChannel();
         String channelName = channelXmlElement.getType();
         if (channelName != null) {
             TelemetryChannel channel = ReflectionUtils.createInstance(channelName, TelemetryChannel.class, Map.class, channelXmlElement.getData());
             if (channel != null) {
                 channel.setSampler(telemetrySampler);
                 configuration.setChannel(channel);
+                if (isLocalForwarderChannel(channelName) && isQuickPulseEnabledInConfiguration(xmlConfig)) {
+                    InternalLogger.INSTANCE.info("LocalForwarder will handle QuickPulse communication. Disabling SDK QuickPulse module.");
+                    xmlConfig.getQuickPulse().setEnabled(false);
+                }
                 return true;
             } else {
                 InternalLogger.INSTANCE.error("Failed to create '%s'", channelName);
@@ -520,6 +518,10 @@ public enum TelemetryConfigurationFactory {
             configuration.setChannel(channel);
             return true;
         }
+    }
+
+    private boolean isLocalForwarderChannel(String channel) {
+        return "com.microsoft.applicationinsights.channel.concrete.localforwarder.LocalForwarderTelemetryChannel".equals(channel);
     }
 
     private void loadProcessorComponents(

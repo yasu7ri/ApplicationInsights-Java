@@ -304,6 +304,8 @@ public class ApplicationInsightsProperties {
       private int flushIntervalInSeconds =
           TelemetryChannelBase.DEFAULT_FLUSH_BUFFER_TIMEOUT_IN_SECONDS;
 
+      private boolean developerMode;
+
       public int getMaxTelemetryBufferCapacity() {
         return maxTelemetryBufferCapacity;
       }
@@ -326,6 +328,14 @@ public class ApplicationInsightsProperties {
 
       public void setEndpointAddress(String endpointAddress) {
         this.endpointAddress = endpointAddress;
+      }
+
+      public boolean isDeveloperMode() {
+        return developerMode;
+      }
+
+      public void setDeveloperMode(boolean developerMode) {
+        this.developerMode = developerMode;
       }
     }
   }

@@ -30,12 +30,12 @@ import com.microsoft.applicationinsights.autoconfigure.ApplicationInsightsProper
 import com.microsoft.applicationinsights.autoconfigure.conditionals.InstrumentationKeyCondition;
 import com.microsoft.applicationinsights.channel.TelemetryChannel;
 import com.microsoft.applicationinsights.channel.concrete.inprocess.InProcessTelemetryChannel;
-import com.microsoft.applicationinsights.channel.concrete.localforwarder.LocalForwarderTelemetryChannel;
 import com.microsoft.applicationinsights.exceptions.IllegalConfigurationException;
 import com.microsoft.applicationinsights.extensibility.ContextInitializer;
 import com.microsoft.applicationinsights.extensibility.TelemetryInitializer;
 import com.microsoft.applicationinsights.extensibility.TelemetryModule;
 import com.microsoft.applicationinsights.extensibility.TelemetryProcessor;
+import com.microsoft.applicationinsights.internal.config.ReflectionUtils;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import com.microsoft.applicationinsights.internal.perfcounter.PerformanceCounterContainer;
 import com.microsoft.applicationinsights.internal.quickpulse.QuickPulse;
@@ -174,16 +174,24 @@ public class ApplicationInsightsTelemetryAutoConfiguration {
         String localForwarderEndpoint = environment.getProperty("azure.application-insights.channel.local-forwarder.endpoint-address");
         String inProcessEndPoint = environment.getProperty("azure.application-insights.channel.in-process.endpoint-address");
         if (StringUtils.isNotBlank(localForwarderEndpoint) && StringUtils.isNotBlank(inProcessEndPoint)) {
-            throw new IllegalConfigurationException("SDK cannot have two channels, please either remove Local Forwarder Endpoint, "
-                + "or In Process Endpoint");
+            throw new IllegalConfigurationException("SDK cannot have two channels, please either remove Local Forwarder Endpoint, or In Process Endpoint");
         }
 
         // If local forwarder endpoint is present configure local forwarder channel
         if (StringUtils.isNotBlank(localForwarderEndpoint)) {
             LocalForwarder lf = applicationInsightsProperties.getChannel().getLocalForwarder();
-
-            return new LocalForwarderTelemetryChannel(lf.getEndpointAddress(), false, lf.getMaxTelemetryBufferCapacity() ,
-                lf.getFlushIntervalInSeconds());
+            final HashMap<String, String> parameters = new HashMap<>();
+            parameters.put("EndpointAddress", lf.getEndpointAddress());
+            parameters.put("DeveloperMode", String.valueOf(lf.isDeveloperMode()));
+            parameters.put("MaxTelemetryBufferCapacity", String.valueOf(lf.getMaxTelemetryBufferCapacity()));
+            parameters.put("FlushIntervalInSeconds", String.valueOf(lf.getFlushIntervalInSeconds()));
+            try {
+                return ReflectionUtils.createInstance(
+                        "com.microsoft.applicationinsights.channel.concrete.localforwarder.LocalForwarderTelemetryChannel", TelemetryChannel.class,
+                        Map.class, parameters);
+            } catch (Exception e) {
+                throw new IllegalConfigurationException("LocalForwarderTelemetryChannel could not be initialized. Make sure the applicationinsights-local-forwarder.jar is on the classpath", e);
+            }
         }
 
         InProcess inProcess = applicationInsightsProperties.getChannel().getInProcess();
