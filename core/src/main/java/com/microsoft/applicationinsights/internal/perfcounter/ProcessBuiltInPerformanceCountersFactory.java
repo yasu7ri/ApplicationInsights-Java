@@ -27,6 +27,7 @@ import java.util.Collections;
 
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import com.microsoft.applicationinsights.internal.system.SystemInformation;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  * The class will create the 'built-in'/default performance counters.
@@ -110,7 +111,9 @@ final class ProcessBuiltInPerformanceCountersFactory implements PerformanceCount
             throw td;
         } catch (Throwable e) {
             try {
-                InternalLogger.INSTANCE.error("Failed to create WindowsPerformanceCounterAsMetric: '%s'", e.toString());
+                if (InternalLogger.INSTANCE.isErrorEnabled()) {
+                    InternalLogger.INSTANCE.error("Failed to create WindowsPerformanceCounterAsMetric: %s", ExceptionUtils.getStackTrace(e));
+                }
             } catch (ThreadDeath td) {
                 throw td;
             } catch (Throwable t2) {
