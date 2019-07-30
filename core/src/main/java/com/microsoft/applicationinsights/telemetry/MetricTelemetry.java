@@ -88,6 +88,33 @@ public final class MetricTelemetry extends BaseTelemetry<MetricData> {
     }
 
     /**
+     * Marks this metric as Performance Counter with the given category, counterName and instance.
+     * This sets this metric's name to {@code category + " - " + counterName} and sets the property "CounterInstanceName" to the given instance.
+     * @see #markAsCustomPerfCounter()
+     * @param category performance counter category
+     * @param counterName performance counter name
+     * @param instance performance counter instance
+     */
+    public void markAsCustomPerfCounter(String category, String counterName, String instance) {
+        if (Strings.isNullOrEmpty(category)) {
+            if (Strings.isNullOrEmpty(counterName)) { // both empty
+                throw new IllegalArgumentException("Either category or counterName must be non-empty");
+            }
+            setName(counterName);
+        } else { // category is non-empty
+            if (Strings.isNullOrEmpty(counterName)) {
+                setName(category);
+            } else { // both non-empty
+                setName(category + " - " + counterName);
+            }
+        }
+        if (!Strings.isNullOrEmpty(instance)) {
+            getProperties().put("CounterInstanceName", instance);
+        }
+        markAsCustomPerfCounter();
+    }
+
+    /**
      * Gets the name of the metric.
      * @return The name of the metric.
      */
