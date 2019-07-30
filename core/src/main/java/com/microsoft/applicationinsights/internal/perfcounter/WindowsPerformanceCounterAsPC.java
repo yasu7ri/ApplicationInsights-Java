@@ -28,13 +28,13 @@ import com.google.common.base.Preconditions;
 import com.microsoft.applicationinsights.TelemetryClient;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import com.microsoft.applicationinsights.internal.system.SystemInformation;
-import com.microsoft.applicationinsights.telemetry.PerformanceCounterTelemetry;
+import com.microsoft.applicationinsights.telemetry.MetricTelemetry;
 
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
- * Built-in Windows performance counters that are sent as {@link com.microsoft.applicationinsights.telemetry.PerformanceCounterTelemetry}
+ * Built-in Windows performance counters that are sent as {@link com.microsoft.applicationinsights.telemetry.MetricTelemetry}
  *
  * Created by gupele on 3/30/2015.
  */
@@ -99,7 +99,9 @@ public final class WindowsPerformanceCounterAsPC extends AbstractWindowsPerforma
     }
 
     private void send(TelemetryClient telemetryClient, double value, WindowsPerformanceCounterData data) {
-        PerformanceCounterTelemetry telemetry = new PerformanceCounterTelemetry(data.categoryName, data.counterName, data.instanceName, value);
+        MetricTelemetry telemetry = new MetricTelemetry();
+        telemetry.setValue(value);
+        telemetry.markAsCustomPerfCounter(data.getCategoryName(), data.getCounterName(), data.getInstanceName());
         telemetryClient.track(telemetry);
     }
 

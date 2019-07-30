@@ -27,15 +27,14 @@ import java.io.FileReader;
 import com.microsoft.applicationinsights.TelemetryClient;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import com.microsoft.applicationinsights.internal.system.SystemInformation;
-import com.microsoft.applicationinsights.telemetry.PerformanceCounterTelemetry;
-import com.microsoft.applicationinsights.telemetry.Telemetry;
+import com.microsoft.applicationinsights.telemetry.MetricTelemetry;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  * The class knows how to supply the io usage of the current process under the Unix OS.
  *
  * When activated the class will calculate the io usage based on the data under /proc/[pid]/io
- * file and will create a {@link com.microsoft.applicationinsights.telemetry.PerformanceCounterTelemetry}
+ * file and will create a {@link com.microsoft.applicationinsights.telemetry.MetricTelemetry}
  * that will contain that data per the amount of time elapsed from the last check in seconds.
  *
  * Created by gupele on 3/8/2015.
@@ -73,12 +72,9 @@ final class UnixProcessIOPerformanceCounter extends AbstractUnixPerformanceCount
             prevProcessIO = processIO;
 
             InternalLogger.INSTANCE.trace("Sending Performance Counter: %s %s: %s", getProcessCategoryName(), Constants.PROCESS_IO_PC_COUNTER_NAME, value);
-            Telemetry telemetry = new PerformanceCounterTelemetry(
-                    getProcessCategoryName(),
-                    Constants.PROCESS_IO_PC_COUNTER_NAME,
-                    SystemInformation.INSTANCE.getProcessId(),
-                    value);
-
+            MetricTelemetry telemetry = new MetricTelemetry();
+            telemetry.markAsCustomPerfCounter(getProcessCategoryName(), Constants.PROCESS_IO_PC_COUNTER_NAME, SystemInformation.INSTANCE.getProcessId());
+            telemetry.setValue(value);
             telemetryClient.track(telemetry);
         }
 

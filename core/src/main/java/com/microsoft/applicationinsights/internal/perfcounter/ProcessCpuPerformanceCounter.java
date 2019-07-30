@@ -24,8 +24,7 @@ package com.microsoft.applicationinsights.internal.perfcounter;
 import com.microsoft.applicationinsights.TelemetryClient;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import com.microsoft.applicationinsights.internal.system.SystemInformation;
-import com.microsoft.applicationinsights.telemetry.PerformanceCounterTelemetry;
-import com.microsoft.applicationinsights.telemetry.Telemetry;
+import com.microsoft.applicationinsights.telemetry.MetricTelemetry;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
@@ -72,11 +71,9 @@ final class ProcessCpuPerformanceCounter extends AbstractPerformanceCounter {
         }
 
         InternalLogger.INSTANCE.trace("Performance Counter: %s %s: %s", getProcessCategoryName(), Constants.CPU_PC_COUNTER_NAME, processCpuUsage);
-        Telemetry telemetry = new PerformanceCounterTelemetry(
-                getProcessCategoryName(),
-                Constants.CPU_PC_COUNTER_NAME,
-                SystemInformation.INSTANCE.getProcessId(),
-                processCpuUsage);
+        MetricTelemetry telemetry = new MetricTelemetry();
+        telemetry.setValue(processCpuUsage);
+        telemetry.markAsCustomPerfCounter(getProcessCategoryName(), Constants.CPU_PC_COUNTER_NAME, SystemInformation.INSTANCE.getProcessId());
         telemetryClient.track(telemetry);
     }
 }

@@ -27,8 +27,7 @@ import java.util.ArrayList;
 
 import com.microsoft.applicationinsights.TelemetryClient;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
-import com.microsoft.applicationinsights.telemetry.PerformanceCounterTelemetry;
-import com.microsoft.applicationinsights.telemetry.Telemetry;
+import com.microsoft.applicationinsights.telemetry.MetricTelemetry;
 
 import com.google.common.base.Strings;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -81,11 +80,9 @@ final class UnixTotalCpuPerformanceCounter extends AbstractUnixPerformanceCounte
             double totalCpuUsage = calculateTotalCpuUsage(array);
 
             InternalLogger.INSTANCE.trace("Sending Performance Counter: %s %s %s: %s", Constants.TOTAL_CPU_PC_CATEGORY_NAME, Constants.CPU_PC_COUNTER_NAME, Constants.INSTANCE_NAME_TOTAL, totalCpuUsage);
-            Telemetry telemetry = new PerformanceCounterTelemetry(
-                    Constants.TOTAL_CPU_PC_CATEGORY_NAME,
-                    Constants.CPU_PC_COUNTER_NAME,
-                    Constants.INSTANCE_NAME_TOTAL,
-                    totalCpuUsage);
+            MetricTelemetry telemetry = new MetricTelemetry();
+            telemetry.markAsCustomPerfCounter(Constants.TOTAL_CPU_PC_CATEGORY_NAME, Constants.CPU_PC_COUNTER_NAME, Constants.INSTANCE_NAME_TOTAL);
+            telemetry.setValue(totalCpuUsage);
 
             telemetryClient.track(telemetry);
         }

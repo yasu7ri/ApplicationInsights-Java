@@ -28,19 +28,19 @@ import com.microsoft.applicationinsights.internal.jmx.JmxAttributeData;
 import com.microsoft.applicationinsights.internal.jmx.JmxDataFetcher;
 import com.microsoft.applicationinsights.internal.logger.InternalLogger;
 import com.microsoft.applicationinsights.internal.system.SystemInformation;
-import com.microsoft.applicationinsights.telemetry.PerformanceCounterTelemetry;
+import com.microsoft.applicationinsights.telemetry.MetricTelemetry;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A performance counter that sends {@link com.microsoft.applicationinsights.telemetry.PerformanceCounterTelemetry}
+ * A performance counter that sends {@link com.microsoft.applicationinsights.telemetry.MetricTelemetry}
  *
  * Created by gupele on 3/15/2015.
  */
 public final class JmxPerformanceCounter implements PerformanceCounter {
-    private final PerformanceCounterTelemetry telemetry;
+    private final MetricTelemetry telemetry;
     private final Map<String, Collection<JmxAttributeData>> objectToAttributes;
     private Map.Entry<String, Collection<JmxAttributeData>> entry;
     private final String id;
@@ -59,10 +59,8 @@ public final class JmxPerformanceCounter implements PerformanceCounter {
         Preconditions.checkArgument(!objectToAttributes.isEmpty(), "objectToAttributes should be not be empty");
 
         id = categoryName + "." + counterName;
-        telemetry = new PerformanceCounterTelemetry();
-        telemetry.setCategoryName(categoryName);
-        telemetry.setCounterName(counterName);
-        telemetry.setInstanceName(SystemInformation.INSTANCE.getProcessId());
+        telemetry = new MetricTelemetry();
+        telemetry.markAsCustomPerfCounter(categoryName, counterName, SystemInformation.INSTANCE.getProcessId());
         this.objectToAttributes = objectToAttributes;
     }
 
@@ -123,7 +121,7 @@ public final class JmxPerformanceCounter implements PerformanceCounter {
             if (ok) {
                 try {
                     telemetry.setValue(value);
-                    InternalLogger.INSTANCE.trace("JMX Metric: %s:%s: %s", telemetry.getCategoryName(), telemetry.getCounterName(), value);
+                    InternalLogger.INSTANCE.trace("JMX Metric: %s: %s", telemetry.getName(), value);
                     telemetryClient.track(telemetry);
                 } catch (Exception e) {
                     InternalLogger.INSTANCE.error("Error while sending JMX data for '%s': '%s'", getId(), e.toString());
