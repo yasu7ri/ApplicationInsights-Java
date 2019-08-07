@@ -61,7 +61,7 @@ public class ApplicationInsightsWebMvcAutoConfiguration {
 
     /**
      * Programmatically registers a FilterRegistrationBean to register WebRequestTrackingFilter
-     * @param webRequestTrackingFilter
+     * @param webRequestTrackingFilter The {@link WebRequestTrackingFilter} instance to register.
      * @return Bean of type {@link FilterRegistrationBean}
      */
     @Bean
@@ -75,7 +75,7 @@ public class ApplicationInsightsWebMvcAutoConfiguration {
 
     /**
      * Programmatically registers an ApplicationInsightsServletContextListener to destroy all the running threads.
-     * @param applicationInsightsServletContextListener
+     * @param applicationInsightsServletContextListener The {@link ApplicationInsightsServletContextListener} instance to register.
      * @return Bean of type {@link ServletListenerRegistrationBean}
      */
     @Bean
