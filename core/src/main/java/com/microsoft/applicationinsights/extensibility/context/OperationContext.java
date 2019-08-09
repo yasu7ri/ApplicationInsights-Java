@@ -29,7 +29,7 @@ public final class OperationContext {
 
     /**
      * Constructs new OperationContext object with the given tags.
-     * @param tags The OperationContext tags.
+     * @param tags The map of context tags.
      */
     public OperationContext(Map<String, String> tags) {
         this.tags = tags;
@@ -53,7 +53,7 @@ public final class OperationContext {
 
     /**
      * Set the Operation Parent id
-     * @param parentId
+     * @param parentId The id of this operation's parent.
      */
     public void setParentId(String parentId) {
         MapUtil.setStringValueOrRemove(tags, ContextTagKeys.getKeys().getOperationParentId(), parentId);
@@ -62,7 +62,7 @@ public final class OperationContext {
 
     /**
      * Get the operation parent id
-     * @return
+     * @return the id of this operation's parent
      */
 
     public String getParentId() {

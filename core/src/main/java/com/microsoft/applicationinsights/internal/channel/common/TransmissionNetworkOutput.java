@@ -77,7 +77,7 @@ public final class TransmissionNetworkOutput implements TransmissionOutput {
      * @param transmissionPolicyManager
      *            The transmission policy used to mark this sender active or
      *            blocked.
-     * @return
+     * @return The requested instance
      */
     public static TransmissionNetworkOutput create(TransmissionPolicyManager transmissionPolicyManager) {
         return create(DEFAULT_SERVER_URI, transmissionPolicyManager);
@@ -91,7 +91,7 @@ public final class TransmissionNetworkOutput implements TransmissionOutput {
      * @param transmissionPolicyManager
      *            The transmission policy used to mark this sender active or
      *            blocked.
-     * @return
+     * @return The requested instance
      */
     public static TransmissionNetworkOutput create(String endpoint,
             TransmissionPolicyManager transmissionPolicyManager) {
@@ -99,15 +99,6 @@ public final class TransmissionNetworkOutput implements TransmissionOutput {
         return new TransmissionNetworkOutput(realEndpoint, transmissionPolicyManager);
     }
 
-    /**
-     * Private Ctor to initialize class.
-     * <p>
-     * Also creates the httpClient using the ApacheSender instance
-     *
-     * @param serverUri
-     *            The HTTP endpoint to send our telemetry too.
-     * @param transmissionPolicyManager
-     */
     private TransmissionNetworkOutput(String serverUri, TransmissionPolicyManager transmissionPolicyManager) {
         Preconditions.checkNotNull(serverUri, "serverUri should be a valid non-null value");
         Preconditions.checkArgument(!Strings.isNullOrEmpty(serverUri), "serverUri should be a valid non-null value");

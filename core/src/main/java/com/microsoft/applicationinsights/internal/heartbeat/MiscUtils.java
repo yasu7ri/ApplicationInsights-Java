@@ -2,7 +2,6 @@ package com.microsoft.applicationinsights.internal.heartbeat;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -13,10 +12,10 @@ import java.util.Set;
 public class MiscUtils {
 
   /**
-   * Returns a set which contains result of List - Set
-   * @param target
-   * @param toRemove
-   * @return
+   * Returns a set which contains result of target - toRemove
+   * @param target The source collection
+   * @param toRemove The collection of items to exclude from target
+   * @return The resulting set of target without the removed elements
    */
    public static Set<String> except(Collection<String> target, Collection<String> toRemove) {
       if (toRemove == null) {

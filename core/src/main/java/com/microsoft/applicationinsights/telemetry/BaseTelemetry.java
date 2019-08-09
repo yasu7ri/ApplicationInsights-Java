@@ -128,7 +128,7 @@ public abstract class BaseTelemetry<T extends Domain> implements Telemetry {
     }
 
     /**
-     * @deprecated
+     * @deprecated No longer used
      * Makes sure the data to send is sanitized from bad chars, proper length etc.
      */
     @Override
@@ -192,6 +192,7 @@ public abstract class BaseTelemetry<T extends Domain> implements Telemetry {
 
     /**
      * Concrete classes should implement this method
+     * @deprecated No longer used
      */
     @Deprecated
     protected abstract void additionalSanitize();

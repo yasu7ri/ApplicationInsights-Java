@@ -38,7 +38,7 @@ public class HeartbeatDefaultPayload {
 
   /**
    * This is used to add additional default providers. Used in SpringBoot Module
-   * @param payloadProviderInterface
+   * @param payloadProviderInterface The provider to add
    * @return true if payloadProvider is added successfully
    */
   public static boolean addDefaultPayLoadProvider(HeartBeatPayloadProviderInterface payloadProviderInterface) {

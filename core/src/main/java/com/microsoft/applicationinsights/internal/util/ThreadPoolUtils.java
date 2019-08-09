@@ -74,6 +74,8 @@ public final class ThreadPoolUtils {
      * {@code poolName} will be appended with a hyphen and the threadId.
      * @param clazz The class holding the thread pool
      * @param instanceId The identifier of the instance of {@code clazz}
+     * @return The named thread factory requested
+     * @see #createNamedDaemonThreadFactory(String)
      */
     public static ThreadFactory createDaemonThreadFactory(final Class<?> clazz, final int instanceId) {
         return createNamedDaemonThreadFactory(String.format("%s_%d", clazz.getSimpleName(), instanceId));
@@ -83,7 +85,8 @@ public final class ThreadPoolUtils {
      * {@code poolName} will be appended with a hyphen and the unique name.
      * @param clazz The class holding the thread pool
      * @param uniqueId The identifier of the instance of {@code clazz}
-     * @return
+     * @return The named thread factory requested.
+     * @see #createNamedDaemonThreadFactory(String)
      */
     public static ThreadFactory createDaemonThreadFactory(final Class<?> clazz, final String uniqueId) {
         return createNamedDaemonThreadFactory(String.format("%s_%s", clazz.getSimpleName(), uniqueId));

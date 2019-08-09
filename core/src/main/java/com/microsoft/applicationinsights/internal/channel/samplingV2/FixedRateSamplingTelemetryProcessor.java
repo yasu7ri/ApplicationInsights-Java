@@ -89,7 +89,7 @@ public final class FixedRateSamplingTelemetryProcessor implements TelemetryProce
     /**
      * This method returns a set of classes of excluded types specified by user
      *
-     * @return
+     * @return The set of classes that will be excluded from sampling
      */
     public Set<Class> getExcludedTypes() {
         return excludedTypes;
@@ -98,7 +98,7 @@ public final class FixedRateSamplingTelemetryProcessor implements TelemetryProce
     /**
      * This method returns a set of classes of included types specified by user
      *
-     * @return
+     * @return The set of classes that will be included in sampling
      */
     public Set<Class> getIncludedTypes() {
         return includedTypes;
@@ -146,8 +146,8 @@ public final class FixedRateSamplingTelemetryProcessor implements TelemetryProce
     /**
      * This method determines if the telemetry needs to be sampled or not.
      *
-     * @param telemetry
-     * @return
+     * @param telemetry The telemetry in question
+     * @return true if the telemetry should be included, false if the item should be sampled-out.
      */
     @Override
     public boolean process(Telemetry telemetry) {
@@ -189,8 +189,8 @@ public final class FixedRateSamplingTelemetryProcessor implements TelemetryProce
     /**
      * Determines if the argument is applicable for sampling
      *
-     * @param item : Denotes the class item to be determined applicable for sampling
-     * @return boolean
+     * @param item The class of the item to be check
+     * @return boolean true if the type should be included in sampling, false otherwise
      */
     private boolean isSamplingApplicable(Class item) {
 
@@ -206,9 +206,8 @@ public final class FixedRateSamplingTelemetryProcessor implements TelemetryProce
     }
 
     /**
-     * This method is invoked during configuration to add one element to the
-     * excluded types set from the xml array list of excluded types
-     * @param value
+     * Excludes a Telemetry type from sampling by name.
+     * @param value The telemetry type name to exclude
      */
     public void addToExcludedType(String value) {
 
@@ -218,9 +217,8 @@ public final class FixedRateSamplingTelemetryProcessor implements TelemetryProce
     }
 
     /**
-     * This method is invoked during configuration to add one element to the
-     * included types set from the xml array list of included types
-     * @param value
+     * Includes a telemetry type in sampling by name.
+     * @param value The telemetry type name to include
      */
     public void addToIncludedType(String value) {
 

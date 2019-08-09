@@ -163,7 +163,7 @@ public class PeriodicTaskPool implements Stoppable {
          * @param period after initial delay, period to execute task.
          * @param unit timeUnit for initial delay and period
          * @param taskId identifier for task
-         * @return
+         * @return A task described by the parameters
          */
         public static PeriodicRunnableTask createTask(Runnable command, long initialDelay, long period,
                                                       TimeUnit unit, String taskId) {

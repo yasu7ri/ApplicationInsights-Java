@@ -17,8 +17,8 @@ public class SamplingScoreGeneratorV2 {
     /**
      * This method takes the telemetry and returns the hash of the operation id if it is present already
      * or uses the random number generator to generate the sampling score.
-     * @param telemetry
-     * @return
+     * @param telemetry The telemetry item to score
+     * @return The sampling score for the given Telemetry
      */
     public static double getSamplingScore(Telemetry telemetry) {
 

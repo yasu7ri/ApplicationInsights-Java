@@ -187,6 +187,7 @@ public final class RequestTelemetry extends BaseSampleSourceTelemetry<RequestDat
 
     /**
      * Gets the source for the request telemetry object. This often is an ID identifying the caller.
+     * @return This request's source
      */
     public String getSource() {
         return data.getSource();

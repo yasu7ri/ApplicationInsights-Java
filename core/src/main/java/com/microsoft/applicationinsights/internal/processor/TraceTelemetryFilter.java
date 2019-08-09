@@ -79,6 +79,7 @@ public final class TraceTelemetryFilter implements TelemetryProcessor {
 
 
     /**
+     * @param fromSeverityLevel The severity level as string
      * @deprecated Not intended for public use. Visibility will be reduced in a future unbindFromRunawayChildThreads.
      */
     @Deprecated /* @VisibleForTesting : FIXME next major unbindFromRunawayChildThreads, make package-private; do not remove; used in tests */

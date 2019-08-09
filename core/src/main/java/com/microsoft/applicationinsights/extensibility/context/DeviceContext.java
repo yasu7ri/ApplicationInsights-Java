@@ -119,6 +119,7 @@ public final class DeviceContext {
     }
 
     /**
+     * @param roleName This application's role name.
      * @deprecated use {@link CloudContext#setRole(String)}
      */
     @Deprecated
@@ -136,6 +137,7 @@ public final class DeviceContext {
     }
 
     /**
+     * @param roleInstance The identifier for this applciation's role instance. For example, the machine's hostname.
      * @deprecated use {@link CloudContext#setRoleInstance(String)}
      */
     @Deprecated

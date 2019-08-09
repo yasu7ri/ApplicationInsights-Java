@@ -189,10 +189,13 @@ public final class JsonTelemetryDataSerializer {
     /**
      * This method is deprecated and is kept because there is still some dependency on it
      * which will be removed in coming versions
-     * @deprecated
-     * @param name
-     * @param value
-     * @throws IOException
+     *
+     * This method is a nop
+     *
+     * @deprecated Use {@link #write(String, String, int)}
+     * @param name Name of field
+     * @param value Value of field
+     * @throws IOException When there's an error writing
      */
     @Deprecated
     public void write(String name, String value) throws IOException {

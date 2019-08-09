@@ -91,7 +91,7 @@ public final class RemoteDependencyTelemetry extends BaseSampleSourceTelemetry<R
     }
 
     /**
-     * Gets the dependency Id.
+     * @return This dependency's id.
      */
     public String getId() {
         return this.data.getId();
@@ -106,7 +106,7 @@ public final class RemoteDependencyTelemetry extends BaseSampleSourceTelemetry<R
     }
 
     /**
-     * Gets tne dependency name.
+     * Gets the dependency name.
      * @return The dependency name.
      */
     public String getName() {
@@ -272,6 +272,7 @@ public final class RemoteDependencyTelemetry extends BaseSampleSourceTelemetry<R
 
     /**
      * Gets the target of this dependency.
+     * @return This dependency's target
      */
     public String getTarget() {
         return data.getTarget();
@@ -306,7 +307,7 @@ public final class RemoteDependencyTelemetry extends BaseSampleSourceTelemetry<R
     }
 
     /**
-     * @deprecated
+     * @deprecated No longer used
      * Gets the Async property.
      * @return True if async.
      */
@@ -316,7 +317,7 @@ public final class RemoteDependencyTelemetry extends BaseSampleSourceTelemetry<R
     }
 
     /**
-     * @deprecated
+     * @deprecated No longer used
      * Sets the Async property.
      * @param value True if async.
      */
@@ -326,7 +327,7 @@ public final class RemoteDependencyTelemetry extends BaseSampleSourceTelemetry<R
     }
 
     /**
-     * @deprecated
+     * @deprecated No longer used
      * Gets the Dependency Source property.
      * @return Dependency Source property.
      */
@@ -336,7 +337,7 @@ public final class RemoteDependencyTelemetry extends BaseSampleSourceTelemetry<R
     }
 
     /**
-     * @deprecated
+     * @deprecated No longer used
      * Sets the Dependency Source property.
      * @param value Dependency Source property.
      */
@@ -370,6 +371,9 @@ public final class RemoteDependencyTelemetry extends BaseSampleSourceTelemetry<R
         this.samplingPercentage = samplingPercentage;
     }
 
+    /**
+     * @deprecated No longer used
+     */
     @Override
     @Deprecated
     protected void additionalSanitize() {

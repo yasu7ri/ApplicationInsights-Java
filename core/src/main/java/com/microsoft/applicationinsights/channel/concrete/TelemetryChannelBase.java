@@ -341,8 +341,8 @@ public abstract class TelemetryChannelBase<T> implements TelemetryChannel {
     }
 
     /**
-     *
-     * @param telemetry
+     * Send implementation for this channel. Called from {@link #send(Telemetry)}
+     * @param telemetry The telemetry item to send
      * @return true, if the send was successful, false if there was an error
      */
     protected abstract boolean doSend(Telemetry telemetry);
@@ -376,7 +376,7 @@ public abstract class TelemetryChannelBase<T> implements TelemetryChannel {
      * a valid URI. Please note that a null or empty string is valid as far as the
      * class is concerned and thus considered valid
      *
-     * @param endpointAddress
+     * @param endpointAddress The candidate uri
      * @throws IllegalArgumentException if the endpointAddress is invalid
      */
     protected void makeSureEndpointAddressIsValid(String endpointAddress) {

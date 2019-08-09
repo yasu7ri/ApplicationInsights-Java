@@ -74,7 +74,7 @@ public interface Telemetry extends JsonSerializable
     Map<String,String> getProperties();
 
     /**
-     * @deprecated
+     * @deprecated No longer used
      * Sanitizes the properties of the telemetry item based on DP constraints.
      */
     @Deprecated
