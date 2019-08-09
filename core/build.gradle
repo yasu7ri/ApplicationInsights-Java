@@ -81,8 +81,13 @@ sourceSets {
     }
 }
 
+javadoc {
+    exclude 'com/microsoft/localforwarder/**' // exclude generated grpc code from javadoc
+    exclude 'com/microsoft/applicationinsights/internal/schemav2/**' // exclude bond generated data classes
+}
+
 clean {
-    delete 'src/main/generated'
+    delete generatedPath
     delete "${System.properties['java.io.tmpdir']}/AISDK/native" // see JniPCConnector.java for jni directory
 }
 
