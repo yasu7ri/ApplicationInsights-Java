@@ -23,8 +23,6 @@ package com.microsoft.applicationinsights.agentc.internal;
 
 import java.io.File;
 import java.lang.instrument.Instrumentation;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,7 +65,6 @@ import com.microsoft.applicationinsights.telemetry.TraceTelemetry;
 import org.apache.http.HttpHost;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.glowroot.instrumentation.engine.config.InstrumentationDescriptor;
-import org.glowroot.instrumentation.engine.config.InstrumentationDescriptors;
 import org.glowroot.instrumentation.engine.impl.InstrumentationServiceImpl.ConfigServiceFactory;
 import org.glowroot.instrumentation.engine.impl.SimpleConfigServiceFactory;
 import org.glowroot.instrumentation.engine.init.EngineModule;
@@ -120,24 +117,9 @@ public class MainEntryPoint {
     }
 
     public static Logger initLogging(Instrumentation instrumentation, File agentJarFile) {
-        if (DiagnosticsHelper.isAppServiceCodeless()) {
-            try {
-                ClassLoader cl = MainEntryPoint.class.getClassLoader();
-                if (cl == null) {
-                    cl = ClassLoader.getSystemClassLoader();
-                }
-                final URL appsvcConfig = cl.getResource("appsvc.ai.logback.xml");
-                System.setProperty("ai.logback.configurationFile", appsvcConfig.toString());
-            } catch (ThreadDeath td) {
-                throw td;
-            } catch (Throwable t) {
-                startupLogger.error("Could not load appsvc logging config", t);
-            }
-        } else {
-            File logbackXmlOverride = new File(agentJarFile.getParentFile(), "ai.logback.xml");
-            if (logbackXmlOverride.exists()) {
-                System.setProperty("ai.logback.configurationFile", logbackXmlOverride.getAbsolutePath());
-            }
+        File logbackXmlOverride = new File(agentJarFile.getParentFile(), "ai.logback.xml");
+        if (logbackXmlOverride.exists()) {
+            System.setProperty("ai.logback.configurationFile", logbackXmlOverride.getAbsolutePath());
         }
 
         try {
