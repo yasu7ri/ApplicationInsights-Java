@@ -9,9 +9,9 @@
 
     <!-- site.logdir output -->
     <appender name="LOGDIR" class="com.microsoft.applicationinsights.agentc.shadow.ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${site.logdir:-/home/LogFiles}/ApplicationInsights/application-insights-extension.log</file>
+        <file>${site.logdir:-${HOME:-/home}/LogFiles}/ApplicationInsights/application-insights-extension.log</file>
         <rollingPolicy class="com.microsoft.applicationinsights.agentc.shadow.ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${site.logdir:-/home/LogFiles}/ApplicationInsights}/application-insights-extension-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${site.logdir:-${HOME:-/home}/LogFiles}/ApplicationInsights/application-insights-extension-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxHistory>7</maxHistory>
             <totalSizeCap>5MB</totalSizeCap>
             <maxFileSize>3MB</maxFileSize>

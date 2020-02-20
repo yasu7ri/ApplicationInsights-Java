@@ -54,7 +54,13 @@ public class StatusFile {
     static final String SITE_LOGDIR_PROPERTY = "site.logdir";
 
     @VisibleForTesting
-    static final String DEFAULT_SITE_LOGDIR = "/home/LogFiles";
+    static final String HOME_ENV_VAR = "HOME";
+
+    @VisibleForTesting
+    static final String DEFAULT_HOME_DIR = "/home";
+
+    @VisibleForTesting
+    static final String DEFAULT_LOGDIR = "/LogFiles";
 
     @VisibleForTesting
     static final String DEFAULT_APPLICATIONINSIGHTS_LOGDIR = "/ApplicationInsights";
@@ -94,14 +100,15 @@ public class StatusFile {
     @VisibleForTesting
     static void init() {
         // if on windows, property should specify drive letter
-        directory = StringUtils.defaultIfEmpty(System.getProperty(SITE_LOGDIR_PROPERTY), driveLetter() + DEFAULT_SITE_LOGDIR)
+        directory = StringUtils.defaultIfEmpty(System.getProperty(SITE_LOGDIR_PROPERTY), StringUtils.defaultIfEmpty(System.getenv(HOME_ENV_VAR), driveLetter() + DEFAULT_HOME_DIR) + DEFAULT_LOGDIR)
                 + DEFAULT_APPLICATIONINSIGHTS_LOGDIR + STATUS_FILE_DIRECTORY;
     }
 
     private static String driveLetter() {
-        if (SystemInformation.INSTANCE.isWindows()) {
-            return "D:";
-        }
+        // FIXME test if drive letter is needed
+//        if (SystemInformation.INSTANCE.isWindows()) {
+//            return "D:";
+//        }
         return "";
     }
 

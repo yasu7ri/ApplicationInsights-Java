@@ -17,6 +17,9 @@ import org.junit.*;
 import org.junit.contrib.java.lang.system.*;
 import org.junit.rules.*;
 
+import static com.microsoft.applicationinsights.agentc.internal.diagnostics.status.StatusFile.DEFAULT_APPLICATIONINSIGHTS_LOGDIR;
+import static com.microsoft.applicationinsights.agentc.internal.diagnostics.status.StatusFile.DEFAULT_LOGDIR;
+import static com.microsoft.applicationinsights.agentc.internal.diagnostics.status.StatusFile.STATUS_FILE_DIRECTORY;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
@@ -50,9 +53,9 @@ public class StatusFileTests {
     @Test
     public void defaultDirectoryIsCorrect() {
         String expected = "/home/LogFiles/ApplicationInsights/status";
-        if (SystemInformation.INSTANCE.isWindows()) {
-            expected = "D:" + expected;
-        }
+//        if (SystemInformation.INSTANCE.isWindows()) {
+//            expected = "D:" + expected;
+//        }
         assertEquals(expected, StatusFile.directory);
     }
 
@@ -61,7 +64,26 @@ public class StatusFileTests {
         String parentDir = "/temp/test/prop";
         System.setProperty("site.logdir", parentDir);
         StatusFile.init();
-        String expected = parentDir + StatusFile.DEFAULT_APPLICATIONINSIGHTS_LOGDIR +  StatusFile.STATUS_FILE_DIRECTORY;
+        String expected = parentDir + DEFAULT_APPLICATIONINSIGHTS_LOGDIR +  STATUS_FILE_DIRECTORY;
+        assertEquals(expected, StatusFile.directory);
+    }
+
+    @Test
+    public void homeEnvVarUpdatesBaseDir() {
+        String parentDir = "/temp/test";
+        envVars.set(StatusFile.HOME_ENV_VAR, parentDir);
+        StatusFile.init();
+        String expected = parentDir + DEFAULT_LOGDIR + DEFAULT_APPLICATIONINSIGHTS_LOGDIR + STATUS_FILE_DIRECTORY;
+        assertEquals(expected, StatusFile.directory);
+    }
+
+    @Test
+    public void siteLogDirHasPrecedenceOverHome() {
+        String homeDir = "/this/is/wrong";
+        String siteLogDir = "/the/correct/dir";
+        System.setProperty("site.logdir", siteLogDir);
+        StatusFile.init();
+        String expected = siteLogDir + DEFAULT_APPLICATIONINSIGHTS_LOGDIR + STATUS_FILE_DIRECTORY;
         assertEquals(expected, StatusFile.directory);
     }
 
